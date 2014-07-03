@@ -37,4 +37,4 @@ beh=GAMESS(sys.argv[1])
 print "============================================="
 print " Analyzing GAMESS output" + sys.argv[1]
 beh.grab("TOTAL ENERGY =")
-print "TOTAL NUMBER OF BASIS =",beh.count_basis()
+print "TOTAL NUMBER OF DET =",beh.count_basis()

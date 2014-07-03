@@ -1,0 +1,15 @@
+<qmc method="vmc" move="pbyp" target="e">
+        <parameter name="blocks">10</parameter>
+        <parameter name="steps">400</parameter>
+        <parameter name="warmupsteps">10</parameter>
+        <parameter name="samples">2000</parameter>
+        <parameter name="walkers">1</parameter>
+        <parameter name="timestep">0.2</parameter>
+</qmc>
+
+<qmc method="dmc" move="pbyp" target="e">
+        <parameter name="blocks">100</parameter>
+        <parameter name="steps">400</parameter>
+        <parameter name="timestep">0.003</parameter>
+        <parameter name="warmupsteps">100</parameter>
+</qmc>

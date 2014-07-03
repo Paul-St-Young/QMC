@@ -1,0 +1,25 @@
+<simulation>
+
+	<project id="molecule" series="1">
+		<application name="qmcapp" role="molecu" class="serial" version="0.2">                                   
+		molecule GAMESS to QMC calculation
+		</application>
+		<host>Kylin</host>
+		<date>today</date>
+		<user>Paul Young</user>
+	</project>
+	
+	<random parallel="true" seed="-1"/>
+	
+	<include href="molecule_ptcl.xml"/>
+	<include href="molecule_wfs.xml"/>
+	
+	<hamiltonian name="h0" type="generic" default="multi" target="e">
+	<pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
+	<pairpot name="Coulomb" type="coulomb" source="ion0" target="e"/>
+	<pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/>
+	</hamiltonian>
+
+	<include href="qmcblock.xml"/>
+
+</simulation>

@@ -6,6 +6,7 @@
 import sys
 molecule = sys.argv[1] # just the name of the molecule
 # so the GAMESS input should read "molecule+'.inp'"
+template_dir = "/home/yyang173/Templates/QMC_Templates/" # remember the trailing /
 
 """
 Prerequisites:
@@ -14,7 +15,7 @@ Prerequisites:
 	2. QMCPACK is compiled and binary location is added to PATH
 	3. rungms outputs the .dat file to cwd
 	4. $(molecule).inp is present in cwd
-	5. QMC_Templates folder is present in cwd
+	5. Directory containing QMC templates is specified
 	
 To do:
 ----
@@ -36,10 +37,7 @@ opt_wfs=molecule+"_opt_wfs.xml"
 ptcl = molecule+"_ptcl.xml"
 convert_out = molecule+"_convert.out"
 
-template_dir = "/home/yyang173/Templates/"
-template_main = template_dir+"QMC_Templates/main.xml"
-template_cuspCorrection = template_dir+"QMC_Templates\/cuspCorrection.xml"
-template_optJastrow = template_dir+"QMC_Templates\/optJastrow.xml"
+template_main = template_dir+"main.xml"
 
 import os
 import subprocess
@@ -177,7 +175,7 @@ def cuspCorrection():
 	mvQMCblock("jastrow","jastrow.xml")
 	qmcblock = "cuspCorrection"
 	os.system("sed 's/molecule/"+molecule+"/g' "+template_main+" > "+qmcblock+".xml")
-	fileline2file(qmcblock+".xml","qmcblock","QMC_Templates/"+qmcblock+".xml")
+	fileline2file(qmcblock+".xml","qmcblock",template_dir+qmcblock+".xml")
 	
 	print("============================================")
 	print("Executing Cusp Correction")
@@ -197,7 +195,7 @@ def optJastrow():
 	
 	qmcblock="optJastrow"
 	os.system("sed 's/molecule/"+molecule+"/g' "+template_main+" > "+qmcblock+".xml")
-	fileline2file(qmcblock+".xml","qmcblock","QMC_Templates/"+qmcblock+".xml")
+	fileline2file(qmcblock+".xml","qmcblock",template_dir+qmcblock+".xml")
 	
 	print("============================================")
 	print("Optimizing Jastrows")
@@ -219,7 +217,7 @@ def rundmc():
 	# write molecule-specified data to qmc template
 	qmcblock="dmc"
 	os.system("sed 's/molecule/"+molecule+"/g' "+template_main+" > "+qmcblock+".xml")
-	fileline2file(qmcblock+".xml","qmcblock","QMC_Templates/"+qmcblock+".xml")
+	fileline2file(qmcblock+".xml","qmcblock",template_dir+qmcblock+".xml")
 	os.system("sed -i 's/"+wfs+"/"+opt_wfs+"/' "+qmcblock+".xml")
 	
 	# run dmc

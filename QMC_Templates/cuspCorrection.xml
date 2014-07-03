@@ -1,0 +1,4 @@
+<qmc method="test">                                      
+  <printEloc>yes</printEloc>
+  <source>ion0</source>
+</qmc> 
