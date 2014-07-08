@@ -237,6 +237,6 @@ rungms()
 convert4qmc()
 cuspCorrection()
 optJastrow()
-#rundmc()
+rundmc()
 
 

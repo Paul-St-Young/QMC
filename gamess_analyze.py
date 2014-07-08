@@ -20,7 +20,7 @@ class GAMESS:
 	def count_basis(self):
 	# count # basis determinants, 
 		in_basis = False
-		MAX_N_BASIS = 2000
+		MAX_N_BASIS = 10000
 		n_basis = 0
 		for line in open(self.gmsout,'r'):
 			if line.find("ALPHA")!=-1 and line.find("BETA")!=-1:

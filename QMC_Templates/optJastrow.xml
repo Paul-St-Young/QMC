@@ -3,7 +3,7 @@
       <parameter name="blocks">  100   </parameter>
       <parameter name="warmupsteps"> 100 </parameter>
       <parameter name="timestep">  0.1  </parameter>
-      <parameter name="samples">  100000 </parameter>
+      <parameter name="samples">  60000 </parameter>
       <parameter name="stepsbetweensamples">  20 </parameter>
       <parameter name="minwalkers">  0.0 </parameter>
       <cost name="energy">                   0.0 </cost>
