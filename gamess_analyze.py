@@ -2,7 +2,7 @@
 """
 GAMESS output analysis script
 Author: Paul Young
-Last Modified: July 3 2014
+Last Modified: July 9 2014
 """
 
 import sys
@@ -20,7 +20,7 @@ class GAMESS:
 	def count_basis(self):
 	# count # basis determinants, 
 		in_basis = False
-		MAX_N_BASIS = 10000
+		MAX_N_BASIS = 1000000
 		n_basis = 0
 		for line in open(self.gmsout,'r'):
 			if line.find("ALPHA")!=-1 and line.find("BETA")!=-1:
@@ -35,6 +35,6 @@ class GAMESS:
 
 beh=GAMESS(sys.argv[1])
 print "============================================="
-print " Analyzing GAMESS output" + sys.argv[1]
+print " Analyzing GAMESS output " + sys.argv[1]
 beh.grab("TOTAL ENERGY =")
 print "TOTAL NUMBER OF DET =",beh.count_basis()

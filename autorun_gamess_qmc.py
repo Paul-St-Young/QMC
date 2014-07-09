@@ -6,7 +6,7 @@
 import sys
 molecule = sys.argv[1] # just the name of the molecule
 # so the GAMESS input should read "molecule+'.inp'"
-template_dir = "/home/yyang173/Templates/QMC_Templates/" # remember the trailing /
+template_dir = "QMC_Templates/" # remember the trailing /
 
 """
 Prerequisites:
@@ -233,10 +233,10 @@ def rundmc():
 	
 
 # ======================= main ======================= #
-rungms()
-convert4qmc()
-cuspCorrection()
+#rungms()
+#convert4qmc()
+#cuspCorrection()
 optJastrow()
-rundmc()
+#rundmc()
 
 
