@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Author: Paul Young
-# Last Modified: 07/11/2014
+# Last Modified: 07/12/2014
 # Objectified autorun script for GAMESS->QMCPACK calculation on the molecule specified
 
 template_dir = "QMC_Templates/" # remember the trailing /
@@ -20,56 +20,51 @@ To do:
 """
 
 import os
-import sys
 import subprocess
 
 class MrData:
-	def __init(self,thisMolecule)__:
-	# Tell Mr. Data the name of the molecule you would like to analyze
+	def __init__(self,thisMolecule):
+		# Tell Mr. Data the name of the molecule you would like to analyze
 		# for example, if the GAMESS input is LiH.inp, then "molecule=LiH"
-		molecule=thisMolecule
+		self.molecule=thisMolecule
 		
 		# some file names
-		inp = molecule + ".inp"
-		out = molecule + ".out"
-		reinp = molecule+"_rerun.inp"
-		reout = molecule+"_rerun.out"
-		temp = "gamess2qmcpack.tmp"
-		gamess_err = "gamess.err"
-		gamess_dat = molecule+".dat "+molecule+"_rerun.dat"
+		self.inp = self.molecule + ".inp"
+		self.out = self.molecule + ".out"
+		self.reinp = self.molecule+"_rerun.inp"
+		self.reout = self.molecule+"_rerun.out"
+		self.temp = "gamess2qmcpack.tmp"
+		self.gamess_err = "gamess.err"
+		self.gamess_dat = self.molecule+".dat "+self.molecule+"_rerun.dat"
 
-		wfs = molecule+"_wfs.xml"
-		opt_wfs=molecule+"_opt_wfs.xml"
-		ptcl = molecule+"_ptcl.xml"
-		convert_out = molecule+"_convert.out"
+		self.wfs = self.molecule+"_wfs.xml"
+		self.opt_wfs=self.molecule+"_opt_wfs.xml"
+		self.ptcl = self.molecule+"_ptcl.xml"
+		self.convert_out = self.molecule+"_convert.out"
 
-		template_main = template_dir+"main.xml"
-		
-	def parseInput:
-		pass
+		self.template_main = template_dir+"main.xml"
 	
 	# ======================= rungms ======================= #
-	def rungms(int i):
+	def rungms(self,i):
 		# REM use ISPHER=1 at $CONTROL in inp
-		gamess_err_file = open(gamess_err,'w') # log error from GAMESS runs
-		
-		if (i==1):
+		gamess_err_file = open(self.gamess_err,'w') # log error from GAMESS runs
+		if (i==1 or i==0):
 			# run GAMESS for the first time
 			# ====
 			print("============================================")
-			print("Executing 1st GAMESS caulation with "+inp)
-			print("Check progress in "+out)
-			with open(out,'w') as outfile:
-				subprocess.call(["rungms",inp],stdout=outfile,stderr=gamess_err_file)
-		elif (i==2):
+			print("Executing 1st GAMESS caulation with "+self.inp)
+			print("Check progress in "+self.out)
+			with open(self.out,'w') as outfile:
+				subprocess.call(["rungms",self.inp],stdout=outfile,stderr=gamess_err_file)
+		if (i==2 or i==0):
 			# creat reinp with MOREAD as GUESS
 			# ====
 				# find NORB
 				# ----
 			print("Looking for OPTIMIZED MCSCF orbits")
-			gamess_out=open(molecule+".dat",'r') # make sure GAMESS outputs to cwd
-			os.system("cp "+inp +" "+ reinp)
-			reinpfile=open(reinp,'a')
+			gamess_out=open(self.molecule+".dat",'r') # make sure GAMESS outputs to cwd
+			os.system("cp "+self.inp +" "+ self.reinp)
+			reinpfile=open(self.reinp,'a')
 			in_orbit=False
 			in_vec=False
 			for line in gamess_out:
@@ -87,58 +82,61 @@ class MrData:
 			reinpfile.close()
 				# creat reinp
 				# ----
-			print("Found "+NORB+" orbits, augmenting GUESS to 'GUESS=MOREAD NORB="+NORB+"' in "+reinp)
+			print("Found "+NORB+" orbits, augmenting GUESS to 'GUESS=MOREAD NORB="+NORB+"' in "+self.reinp)
 			os.system("sed 's/GUESS=HCORE/GUESS=MOREAD NORB="+
-				NORB+"/g' <"+reinp+" >"+temp)
-			os.system("rm "+reinp+"; mv "+temp+" "+reinp)
+				NORB+"/g' <"+self.reinp+" >"+self.temp)
+			os.system("rm "+self.reinp+"; mv "+self.temp+" "+self.reinp)
 	
 			# rerun GAMESS with MO as GUESS
 			# ====
 			print("============================================")
-			print("Executing 2nd GAMESS caulation with "+reinp)
-			print("Check progress in "+reout)
+			print("Executing 2nd GAMESS caulation with "+self.reinp)
+			print("Check progress in "+self.reout)
 	
-			with open(reout,'w') as outfile:
-				subprocess.call(["rungms",reinp],stdout=outfile,stderr=gamess_err_file)
+			with open(self.reout,'w') as outfile:
+				subprocess.call(["rungms",self.reinp],stdout=outfile,stderr=gamess_err_file)
 				
 		gamess_err_file.close()
 
 		print("GAMESS calculations completed")
 		print("=========================================")
-
+		
+		# blindly reorganize folder for now, should check for completion first.
+		os.system("mkdir gamess;mv *.inp *.out *.dat "+self.gamess_err+" gamess")
+		os.system("cp gamess/"+self.reout+" .")
 	# ======================= convert4qmc ======================= #
-	def convert4qmc():
-
+	def convert4qmc(self):
 		# Convert GAMESS output
 		print("Converting GAMESS output to QMCPACK input")
-		with open(convert_out,"w") as outfile:
-			subprocess.call(["convert4qmc","-gamessAscii",reout,"-ci",reout,"-threshold","0.0001"],stdout=outfile)
+		with open(self.convert_out,"w") as outfile:
+			subprocess.call(["convert4qmc","-gamessAscii",self.reout,"-ci",self.reout,"-threshold","0.0001","-add3BodyJ"],stdout=outfile)
 	
 		# folder management
 		# ====
-		os.system("mkdir gamess;mv *.inp *.out "+gamess_err+" *.dat gamess; mv sample.Gaussian-G2.xml "+wfs+"; mv sample.Gaussian-G2.ptcl.xml "+ptcl)
+		os.system("mv sample.Gaussian-G2.xml "+self.wfs+"; mv sample.Gaussian-G2.ptcl.xml "+self.ptcl)
+		os.system("mkdir convert; mv *.xml *.combo.dat "+self.reout+" "+self.convert_out+" convert")
 
 	# ======================= cuspCorrection ======================= #
 
-		# --------------- addOption2QMCline --------------- #
-	def addOption2QMCline(linehead,option):
-		outfile=open(temp,'w')
-		with open(wfs,'r') as infile:
+	# --------------- addOption2QMCline --------------- #
+	def addOption2QMCline(self,linehead,option):
+		outfile=open(self.temp,'w')
+		with open(self.wfs,'r') as infile:
 			for line in infile:
 				if line.find(linehead)!=-1:
 					outfile.write(line[:-2]+option)
 				else:
 					outfile.write(line)
 		outfile.close()
-		subprocess.call(["rm",wfs])
-		subprocess.call(["mv",temp,wfs])
+		subprocess.call(["rm",self.wfs])
+		subprocess.call(["mv",self.temp,self.wfs])
 	
-		# --------------- mvQMCblock --------------- #
-	def mvQMCblock(blockname,filename):
+	# --------------- mvQMCblock --------------- #
+	def mvQMCblock(self,blockname,filename):
 		block_file = open(filename,'w')
 		in_block=False
-		outfile=open(temp,'w')
-		with open(wfs,'r') as infile:
+		outfile=open(self.temp,'w')
+		with open(self.wfs,'r') as infile:
 			for line in infile:
 				if in_block or line.find(blockname)!=-1:
 					block_file.write(line)
@@ -148,12 +146,12 @@ class MrData:
 					in_block=not in_block
 		block_file.close()
 		outfile.close()
-		subprocess.call(["rm",wfs])
-		subprocess.call(["mv",temp,wfs])
+		subprocess.call(["rm",self.wfs])
+		subprocess.call(["mv",self.temp,self.wfs])
 	
-		# --------------- fileline2file --------------- #
-	def fileline2file(templatefile,linehead,linefile):
-		tmp_file=open(temp,'w')
+	# --------------- fileline2file --------------- #
+	def fileline2file(self,templatefile,linehead,linefile):
+		tmp_file=open(self.temp,'w')
 		with open(templatefile,'r') as infile:
 			for line in infile:
 				if line.find(linehead)!=-1:
@@ -163,27 +161,28 @@ class MrData:
 					tmp_file.write(line)
 		tmp_file.close()
 		subprocess.call(["rm",templatefile])
-		subprocess.call(["mv",temp,templatefile])
+		subprocess.call(["mv",self.temp,templatefile])
 
-	def add_QMCblock_before(linehead,block_file):
-		tmp_file=open(temp,'w')
-		with open(wfs,'r') as infile:
+	def add_QMCblock_before(self,linehead,block_file):
+		tmp_file=open(self.temp,'w')
+		with open(self.wfs,'r') as infile:
 			for line in infile:
 				if line.find(linehead)!=-1:
 					with open(block_file,'r') as block:
 						tmp_file.write(block.read())
 				tmp_file.write(line)
 		tmp_file.close()
-		subprocess.call(["rm",wfs])
-		subprocess.call(["mv",temp,wfs])
+		subprocess.call(["rm",self.wfs])
+		subprocess.call(["mv",self.temp,self.wfs])
 	
-	def cuspCorrection():
+	def cuspCorrection(self):
 		# add cuspCorrection and remove jastrow in the wavefunction
-		addOption2QMCline("<determinantset"," cuspCorrection=\"yes\">\n")
-		mvQMCblock("jastrow","jastrow.xml")
+		os.system("cp convert/"+self.wfs+" convert/"+self.ptcl+" .")
+		self.addOption2QMCline("<determinantset"," cuspCorrection=\"yes\">\n")
+		self.mvQMCblock("jastrow","jastrow.xml")
 		qmcblock = "cuspCorrection"
-		os.system("sed 's/molecule/"+molecule+"/g' "+template_main+" > "+qmcblock+".xml")
-		fileline2file(qmcblock+".xml","qmcblock",template_dir+qmcblock+".xml")
+		os.system("sed 's/molecule/"+self.molecule+"/g' "+self.template_main+" > "+qmcblock+".xml")
+		self.fileline2file(qmcblock+".xml","qmcblock",template_dir+qmcblock+".xml")
 	
 		print("============================================")
 		print("Executing Cusp Correction")
@@ -193,35 +192,33 @@ class MrData:
 			subprocess.call(["qmcapp",qmcblock+".xml"],stdout=outfile)
 		
 		# folder management
-		os.system("mkdir -p qmc/cusp;mv newOrbs* *.qmc.xml wftest.000 eloc.dat qmc/cusp;mv *.cont.xml "+qmcblock+".xml qmc/cusp; mv "+qmcblock+".out qmc/cusp")
+		os.system("mkdir cusp;mv newOrbs* *.xml wftest.000 eloc.dat *.out cusp")
 	
 	# ======================= optJastrow ======================= #
-	def optJastrow():
-		addOption2QMCline("updet"," cuspInfo=\"spo-up.cuspInfo.xml\">\n")
-		addOption2QMCline("downdet"," cuspInfo=\"spo-dn.cuspInfo.xml\">\n")
-		add_QMCblock_before("</wavefunction>","jastrow.xml")
+	def optJastrow(self):
+		# modify the wavefunction
+		os.system("cp cusp/"+self.wfs+" cusp/"+self.ptcl+" cusp/*.cuspInfo.xml cusp/jastrow.xml .")
+		self.addOption2QMCline("updet"," cuspInfo=\"spo-up.cuspInfo.xml\">\n")
+		self.addOption2QMCline("downdet"," cuspInfo=\"spo-dn.cuspInfo.xml\">\n")
+		self.add_QMCblock_before("</wavefunction>","jastrow.xml")
 	
 		qmcblock="optJastrow"
-		os.system("sed 's/molecule/"+molecule+"/g' "+template_main+" > "+qmcblock+".xml")
-		fileline2file(qmcblock+".xml","qmcblock",template_dir+qmcblock+".xml")
+		os.system("sed 's/molecule/"+self.molecule+"/g' "+self.template_main+" > "+qmcblock+".xml")
+		self.fileline2file(qmcblock+".xml","qmcblock",template_dir+qmcblock+".xml")
 	
 		print("============================================")
 		print("Optimizing Jastrows")
 		print("Check progress in "+qmcblock+".out")
-		with open(qmcblock+".out",'w') as outfile:
-			subprocess.call(["qmcapp",qmcblock+".xml"],stdout=outfile)
-	
-		qmcblock="optJastrow"
+		
+		
+		#with open(qmcblock+".out",'w') as outfile:
+			#subprocess.call(["qmcapp",qmcblock+".xml"],stdout=outfile)
+			
 		# folder management
-		new_folder="qmc/"+qmcblock
-	
-		os.system("cp "+molecule+".s005.opt.xml "+opt_wfs)
-	
-		os.system("mkdir -p "+new_folder+";mv newOrbs* jastrow.xml J1* J2* "+new_folder+";mv "+molecule+".s* "+qmcblock+".xml "+new_folder+"; mv "+qmcblock+".out "+new_folder)
 	
 	
 	# ======================= rundmc ======================= #
-	def rundmc():
+	def rundmc(self):
 		# write molecule-specified data to qmc template
 		qmcblock="dmc"
 		os.system("sed 's/molecule/"+molecule+"/g' "+template_main+" > "+qmcblock+".xml")
@@ -241,12 +238,35 @@ class MrData:
 	
 
 # ======================= main ======================= #
+import argparse
+
 def main():
-	MrData Data(sys.argv[1])
-	Data.rungms(1)
-	Data.rungms(2)
-	Data.convert4qmc()
-	Data.optJastrow()
-	Data.dmc()
+	parser = argparse.ArgumentParser(description='LtCdr. Data at your service. I can analyze the properties of unknown materials if sufficient information regarding its constituents is available.')
+	parser.add_argument("molecule", help="molecule to analyze. (name of the rungms input file should be 'molecule.inp')")
+	parser.add_argument("-g", "--gms", type=int, choices=[0,1,2], help="run gamess calculation (you may specify if it's the 1st or 2nd calculation, if 0 is given I'll run both)" )
+	parser.add_argument("-c", "--convert", action="store_true", help="convert gamess output to qmc input" )
+	parser.add_argument("-cusp", "--cuspCorrection", action="store_true", help="perform cusp correction" )
+	parser.add_argument("-j", "--optJastrow", action="store_true", help="perform jastrow optimization" )
+	args = parser.parse_args()
+	
+	Data=MrData(args.molecule)
+	
+	if args.gms==1:
+		Data.rungms(1)
+	elif args.gms==2:
+		Data.rungms(2)
+	elif args.gms==0:
+		Data.rungms(0)
+	else:
+		pass
+	
+	if args.convert:
+		Data.convert4qmc()
+	if args.cuspCorrection:
+		Data.cuspCorrection()
+	if args.optJastrow:
+		Data.optJastrow()
+	
+main()
 
 
