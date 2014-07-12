@@ -4,7 +4,7 @@
 		<application name="qmcapp" role="molecu" class="serial" version="0.2">                                   
 		molecule GAMESS to QMC calculation
 		</application>
-		<host>Kylin</host>
+		<host>host_computer</host>
 		<date>today</date>
 		<user>Paul Young</user>
 	</project>

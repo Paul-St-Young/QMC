@@ -3,11 +3,11 @@
       <parameter name="blocks">  100   </parameter>
       <parameter name="warmupsteps"> 100 </parameter>
       <parameter name="timestep">  0.1  </parameter>
-      <parameter name="samples">  60000 </parameter>
+      <parameter name="samples">  5000000 </parameter>
       <parameter name="stepsbetweensamples">  20 </parameter>
       <parameter name="minwalkers">  0.0 </parameter>
-      <cost name="energy">                   0.0 </cost>
+      <cost name="energy">                   0.5 </cost>
       <cost name="unreweightedvariance">     0.0 </cost>
-      <cost name="reweightedvariance">       1.0 </cost>
+      <cost name="reweightedvariance">       0.5 </cost>
     </qmc>
 </loop>
