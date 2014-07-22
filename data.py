@@ -67,18 +67,31 @@ class MrData:
 			reinpfile=open(self.reinp,'a')
 			in_orbit=False
 			in_vec=False
+			count_NORB=0
+			cur=0
+			prev=-1
 			for line in gamess_out:
 				if line.find("OPTIMIZED MCSCF")!=-1:
 					in_orbit=True
 				if in_orbit and line.find("$VEC")!=-1:
 					in_vec=True
 				if in_orbit and in_vec:
+					cur = line[:2]
+					if cur!=prev:
+						count_NORB+=1
+					prev=cur
 					reinpfile.write(line)
 					if line.find("$END")==-1:
 						NORB=line[:2]
 				if line.find("$END")!=-1:
 					in_vec=False
 					in_orbit=False		
+			count_NORB-=2 # first transition is cur=$ prev=-1, last transition is cur=$,prev=last
+			if (int(NORB)!=int(count_NORB)%100):
+                        	print "Mismatch! NORB="+str(NORB)+" <> count_NORB="+str(count_NORB)
+				exit(0)
+			else:
+				NORB=str(count_NORB)
 			reinpfile.close()
 				# creat reinp
 				# ----
