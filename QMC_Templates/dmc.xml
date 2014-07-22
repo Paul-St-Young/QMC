@@ -1,15 +1,41 @@
-<qmc method="vmc" move="pbyp" target="e">
-        <parameter name="blocks">10</parameter>
-        <parameter name="steps">400</parameter>
-        <parameter name="warmupsteps">10</parameter>
-        <parameter name="samples">2000</parameter>
-        <parameter name="walkers">1</parameter>
-        <parameter name="timestep">0.2</parameter>
-</qmc>
+  <!-- VMC -->
+  <qmc method="vmc" move="pbyp" checkpoint="-1">
+    <parameter name="useDrift">yes</parameter>
+    <parameter name="warmupSteps">100</parameter>
+    <parameter name="blocks">100</parameter>
+    <parameter name="steps">10</parameter>
+    <parameter name="subSteps"> 20 </parameter>
+    <parameter name="walkers">1</parameter>
+    <parameter name="timestep">0.3</parameter>
+    <estimator name="LocalEnergy" hdf5="no"/>
+  </qmc>
 
-<qmc method="dmc" move="pbyp" target="e">
-        <parameter name="blocks">100</parameter>
-        <parameter name="steps">400</parameter>
-        <parameter name="timestep">0.003</parameter>
-        <parameter name="warmupsteps">100</parameter>
-</qmc>
+  <!-- DMC -->
+  <qmc method="dmc" move="pbyp" checkpoint="-1">
+    <parameter name="nonlocalmoves">yes</parameter>
+    <parameter name="targetWalkers">1200</parameter>
+    <parameter name="blocks">100</parameter>
+    <parameter name="steps">50</parameter>
+    <parameter name="timestep">0.01</parameter>
+    <estimator name="LocalEnergy" hdf5="no"/>
+  </qmc>
+
+  <!-- DMC -->
+  <qmc method="dmc" move="pbyp" checkpoint="-1">
+    <parameter name="nonlocalmoves">yes</parameter>
+    <parameter name="targetWalkers">1200</parameter>
+    <parameter name="blocks">150</parameter>
+    <parameter name="steps">75</parameter>
+    <parameter name="timestep">0.005</parameter>
+    <estimator name="LocalEnergy" hdf5="no"/>
+  </qmc>
+
+  <!-- DMC -->
+  <qmc method="dmc" move="pbyp" checkpoint="-1">
+    <parameter name="nonlocalmoves">yes</parameter>
+    <parameter name="targetWalkers">1200</parameter>
+    <parameter name="blocks">250</parameter>
+    <parameter name="steps">100</parameter>
+    <parameter name="timestep">0.001</parameter>
+    <estimator name="LocalEnergy" hdf5="no"/>
+  </qmc>
