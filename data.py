@@ -221,20 +221,20 @@ class MrData:
 	def rundmc(self):
 		# write molecule-specified data to qmc template
 		qmcblock="dmc"
-		os.system("sed 's/molecule/"+molecule+"/g' "+template_main+" > "+qmcblock+".xml")
-		fileline2file(qmcblock+".xml","qmcblock",template_dir+qmcblock+".xml")
-		os.system("sed -i 's/"+wfs+"/"+opt_wfs+"/' "+qmcblock+".xml")
+		os.system("sed 's/molecule/"+self.molecule+"/g' "+self.template_main+" > "+qmcblock+".xml")
+		self.fileline2file(qmcblock+".xml","qmcblock",template_dir+qmcblock+".xml")
+		os.system("sed -i 's/"+self.wfs+"/"+self.opt_wfs+"/' "+qmcblock+".xml")
 	
 		# run dmc
-		print("============================================")
-		print("Running DMC")
-		print("Check progress in "+qmcblock+".out")
-		with open(qmcblock+".out",'w') as outfile:
-			subprocess.call(["qmcapp",qmcblock+".xml"],stdout=outfile)
+		#print("============================================")
+		#print("Running DMC")
+		#print("Check progress in "+qmcblock+".out")
+		#with open(qmcblock+".out",'w') as outfile:
+		#	subprocess.call(["qmcapp",qmcblock+".xml"],stdout=outfile)
 		
 		# folder management
-		new_folder="qmc/"+qmcblock
-		os.system("mkdir -p "+new_folder+";mv newOrbs* J1* J2* "+new_folder+";mv "+qmcblock+".xml "+new_folder+"; mv "+qmcblock+".out "+new_folder)
+		#new_folder="qmc/"+qmcblock
+		#os.system("mkdir -p "+new_folder+";mv newOrbs* J1* J2* "+new_folder+";mv "+qmcblock+".xml "+new_folder+"; mv "+qmcblock+".out "+new_folder)
 	
 
 # ======================= main ======================= #
@@ -247,6 +247,8 @@ def main():
 	parser.add_argument("-c", "--convert", action="store_true", help="convert gamess output to qmc input" )
 	parser.add_argument("-cusp", "--cuspCorrection", action="store_true", help="perform cusp correction" )
 	parser.add_argument("-j", "--optJastrow", action="store_true", help="perform jastrow optimization" )
+	parser.add_argument("-d", "--runDMC", action="store_true", help="run Diffusion Monte Carlo" )
+	args = parser.parse_args()
 	args = parser.parse_args()
 	
 	Data=MrData(args.molecule)
@@ -266,7 +268,8 @@ def main():
 		Data.cuspCorrection()
 	if args.optJastrow:
 		Data.optJastrow()
-	
+	if args.runDMC:
+		Data.rundmc()
 main()
 
 

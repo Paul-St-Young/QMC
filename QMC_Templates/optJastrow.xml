@@ -1,13 +1,47 @@
 <loop max="5">
-    <qmc method="linear" move="pbyp" gpu="no" checkpoint="-1">
-      <parameter name="blocks">  100   </parameter>
-      <parameter name="warmupsteps"> 100 </parameter>
-      <parameter name="timestep">  0.1  </parameter>
-      <parameter name="samples">  5000000 </parameter>
-      <parameter name="stepsbetweensamples">  20 </parameter>
-      <parameter name="minwalkers">  0.0 </parameter>
-      <cost name="energy">                   0.5 </cost>
-      <cost name="unreweightedvariance">     0.0 </cost>
-      <cost name="reweightedvariance">       0.5 </cost>
-    </qmc>
+  <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
+    <parameter name="blocks">     200  </parameter>
+    <parameter name="warmupsteps"> 25 </parameter>
+    <parameter name="steps"> 1 </parameter>
+    <parameter name="substeps"> 20 </parameter>
+    <parameter name="timestep"> 0.5 </parameter>
+    <parameter name="samples"> 3600000 </parameter>
+    <cost name="energy">                   0.5 </cost>
+    <cost name="unreweightedvariance">     0.0 </cost>
+    <cost name="reweightedvariance">       0.5 </cost>
+    <parameter name="useDrift">  yes </parameter>
+    <parameter name="bigchange">10.0</parameter>
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="usebuffer"> yes </parameter>
+    <parameter name="nonlocalpp"> yes </parameter>
+    <parameter name="MinMethod">quartic</parameter>
+    <parameter name="exp0">-6</parameter>
+    <parameter name="alloweddifference"> 1.0e-5 </parameter>
+    <parameter name="stepsize">  0.15 </parameter>
+    <parameter name="nstabilizers"> 1 </parameter>
+  </qmc>
+</loop>
+
+<loop max="5">
+  <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
+    <parameter name="blocks">     200  </parameter>
+    <parameter name="warmupsteps"> 25 </parameter>
+    <parameter name="steps"> 1 </parameter>
+    <parameter name="substeps"> 20 </parameter>
+    <parameter name="timestep"> 0.5 </parameter>
+    <parameter name="samples"> 3600000 </parameter>
+    <cost name="energy">                   0.95 </cost>
+    <cost name="unreweightedvariance">     0.0 </cost>
+    <cost name="reweightedvariance">       0.05 </cost>
+    <parameter name="useDrift">  yes </parameter>
+    <parameter name="bigchange">10.0</parameter>
+    <estimator name="LocalEnergy" hdf5="no"/>
+    <parameter name="usebuffer"> yes </parameter>
+    <parameter name="nonlocalpp"> yes </parameter>
+    <parameter name="MinMethod">quartic</parameter>
+    <parameter name="exp0">-6</parameter>
+    <parameter name="alloweddifference"> 1.0e-5 </parameter>
+    <parameter name="stepsize">  0.15 </parameter>
+    <parameter name="nstabilizers"> 1 </parameter>
+  </qmc>
 </loop>
