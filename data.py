@@ -102,7 +102,6 @@ class MrData:
 	
 			# rerun GAMESS with MO as GUESS
 			# ====
-			print("============================================")
 			print("Executing 2nd GAMESS caulation with "+self.reinp)
 			print("Check progress in "+self.reout)
 	
@@ -132,17 +131,17 @@ class MrData:
 	# ======================= cuspCorrection ======================= #
 
 	# --------------- addOption2QMCline --------------- #
-	def addOption2QMCline(self,linehead,option):
+	def addOption2QMCline(self,file2edit,linehead,option):
 		outfile=open(self.temp,'w')
-		with open(self.wfs,'r') as infile:
+		with open(file2edit,'r') as infile:
 			for line in infile:
 				if line.find(linehead)!=-1:
 					outfile.write(line[:-2]+option)
 				else:
 					outfile.write(line)
 		outfile.close()
-		subprocess.call(["rm",self.wfs])
-		subprocess.call(["mv",self.temp,self.wfs])
+		subprocess.call(["rm",file2edit])
+		subprocess.call(["mv",self.temp,file2edit])
 	
 	# --------------- mvQMCblock --------------- #
 	def mvQMCblock(self,blockname,filename):
@@ -176,28 +175,27 @@ class MrData:
 		subprocess.call(["rm",templatefile])
 		subprocess.call(["mv",self.temp,templatefile])
 
-	def add_QMCblock_before(self,linehead,block_file):
+	def add_QMCblock_before(self,file2edit,linehead,block_file):
 		tmp_file=open(self.temp,'w')
-		with open(self.wfs,'r') as infile:
+		with open(file2edit,'r') as infile:
 			for line in infile:
 				if line.find(linehead)!=-1:
 					with open(block_file,'r') as block:
 						tmp_file.write(block.read())
 				tmp_file.write(line)
 		tmp_file.close()
-		subprocess.call(["rm",self.wfs])
-		subprocess.call(["mv",self.temp,self.wfs])
+		subprocess.call(["rm",file2edit])
+		subprocess.call(["mv",self.temp,file2edit])
 	
 	def cuspCorrection(self):
 		# add cuspCorrection and remove jastrow in the wavefunction
 		os.system("cp convert/"+self.wfs+" convert/"+self.ptcl+" .")
-		self.addOption2QMCline("<determinantset"," cuspCorrection=\"yes\">\n")
+		self.addOption2QMCline(self.wfs,"<determinantset"," cuspCorrection=\"yes\">\n")
 		self.mvQMCblock("jastrow","jastrow.xml")
 		qmcblock = "cuspCorrection"
 		os.system("sed 's/molecule/"+self.molecule+"/g' "+self.template_main+" > "+qmcblock+".xml")
 		self.fileline2file(qmcblock+".xml","qmcblock",template_dir+qmcblock+".xml")
-	
-		print("============================================")
+		
 		print("Executing Cusp Correction")
 		print("Check progress in "+qmcblock+".out")
 		os.system("export OMP_NUM_THREADS=1")
@@ -208,47 +206,38 @@ class MrData:
 		os.system("mkdir cusp;mv newOrbs* *.xml wftest.000 eloc.dat *.out cusp")
 	
 	# ======================= optJastrow ======================= #
-	def optJastrow(self):
+	def optJastrow(self,tag):
+		opt_dir="opt"+tag
+		os.system("mkdir "+opt_dir)
+		print("Setting up Jastrow Optimization in "+opt_dir)
+		
+		# copy necessary files
+		os.system("cp cusp/"+self.wfs+" cusp/"+self.ptcl+" cusp/*.cuspInfo.xml cusp/jastrow.xml "+opt_dir)
+		
 		# modify the wavefunction
-		os.system("cp cusp/"+self.wfs+" cusp/"+self.ptcl+" cusp/*.cuspInfo.xml cusp/jastrow.xml .")
-		self.addOption2QMCline("updet"," cuspInfo=\"spo-up.cuspInfo.xml\">\n")
-		self.addOption2QMCline("downdet"," cuspInfo=\"spo-dn.cuspInfo.xml\">\n")
-		self.add_QMCblock_before("</wavefunction>","jastrow.xml")
+		self.addOption2QMCline(opt_dir+"/"+self.wfs,"updet"," cuspInfo=\"spo-up.cuspInfo.xml\">\n")
+		self.addOption2QMCline(opt_dir+"/"+self.wfs,"downdet"," cuspInfo=\"spo-dn.cuspInfo.xml\">\n")
+		self.add_QMCblock_before(opt_dir+"/"+self.wfs,"</wavefunction>",opt_dir+"/jastrow.xml")
 	
 		qmcblock="optJastrow"
 		os.system("sed 's/molecule/"+self.molecule+"/g' "+self.template_main+" > "+qmcblock+".xml")
 		self.fileline2file(qmcblock+".xml","qmcblock",template_dir+qmcblock+".xml")
-	
+		os.system("mv "+qmcblock+".xml "+opt_dir)
 		print("============================================")
-		print("Optimizing Jastrows")
-		print("Check progress in "+qmcblock+".out")
 		
 		
 		#with open(qmcblock+".out",'w') as outfile:
 			#subprocess.call(["qmcapp",qmcblock+".xml"],stdout=outfile)
-			
-		# folder management
-	
 	
 	# ======================= rundmc ======================= #
 	def rundmc(self):
 		# write molecule-specified data to qmc template
+		print("============================================")
+		print("Setting up DMC run")
 		qmcblock="dmc"
 		os.system("sed 's/molecule/"+self.molecule+"/g' "+self.template_main+" > "+qmcblock+".xml")
 		self.fileline2file(qmcblock+".xml","qmcblock",template_dir+qmcblock+".xml")
 		os.system("sed -i 's/"+self.wfs+"/"+self.opt_wfs+"/' "+qmcblock+".xml")
-	
-		# run dmc
-		#print("============================================")
-		#print("Running DMC")
-		#print("Check progress in "+qmcblock+".out")
-		#with open(qmcblock+".out",'w') as outfile:
-		#	subprocess.call(["qmcapp",qmcblock+".xml"],stdout=outfile)
-		
-		# folder management
-		#new_folder="qmc/"+qmcblock
-		#os.system("mkdir -p "+new_folder+";mv newOrbs* J1* J2* "+new_folder+";mv "+qmcblock+".xml "+new_folder+"; mv "+qmcblock+".out "+new_folder)
-	
 
 # ======================= main ======================= #
 import argparse
@@ -259,7 +248,7 @@ def main():
 	parser.add_argument("-g", "--gms", type=int, choices=[0,1,2], help="run gamess calculation (you may specify if it's the 1st or 2nd calculation, if 0 is given I'll run both)" )
 	parser.add_argument("-c", "--convert", action="store_true", help="convert gamess output to qmc input" )
 	parser.add_argument("-cusp", "--cuspCorrection", action="store_true", help="perform cusp correction" )
-	parser.add_argument("-j", "--optJastrow", action="store_true", help="perform jastrow optimization" )
+	parser.add_argument("-j", "--optJastrow", type=str, help="\'-j tag\' perform jastrow optimization in folder opt$tag" )
 	parser.add_argument("-d", "--runDMC", action="store_true", help="run Diffusion Monte Carlo" )
 	args = parser.parse_args()
 	args = parser.parse_args()
@@ -280,7 +269,7 @@ def main():
 	if args.cuspCorrection:
 		Data.cuspCorrection()
 	if args.optJastrow:
-		Data.optJastrow()
+		Data.optJastrow(args.optJastrow)
 	if args.runDMC:
 		Data.rundmc()
 main()
