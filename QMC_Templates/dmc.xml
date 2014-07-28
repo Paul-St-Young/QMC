@@ -2,8 +2,8 @@
   <qmc method="vmc" move="pbyp" checkpoint="-1">
     <parameter name="useDrift">yes</parameter>
     <parameter name="warmupSteps">100</parameter>
-    <parameter name="blocks">100</parameter>
-    <parameter name="steps">10</parameter>
+    <parameter name="blocks">1000</parameter>
+    <parameter name="steps">100</parameter>
     <parameter name="subSteps"> 20 </parameter>
     <parameter name="walkers">1</parameter>
     <parameter name="samples">4800</parameter>
@@ -15,8 +15,8 @@
   <qmc method="dmc" move="pbyp" checkpoint="-1">
     <parameter name="nonlocalmoves">yes</parameter>
     <parameter name="targetWalkers">4800</parameter>
-    <parameter name="blocks">500</parameter>
-    <parameter name="steps">50</parameter>
+    <parameter name="blocks">1500</parameter>
+    <parameter name="steps">100</parameter>
     <parameter name="timestep">0.05</parameter>
     <estimator name="LocalEnergy" hdf5="no"/>
   </qmc>
@@ -25,8 +25,8 @@
   <qmc method="dmc" move="pbyp" checkpoint="-1">
     <parameter name="nonlocalmoves">yes</parameter>
     <parameter name="targetWalkers">4800</parameter>
-    <parameter name="blocks">500</parameter>
-    <parameter name="steps">250</parameter>
+    <parameter name="blocks">1500</parameter>
+    <parameter name="steps">500</parameter>
     <parameter name="timestep">0.01</parameter>
     <estimator name="LocalEnergy" hdf5="no"/>
   </qmc>
@@ -35,8 +35,8 @@
   <qmc method="dmc" move="pbyp" checkpoint="-1">
     <parameter name="nonlocalmoves">yes</parameter>
     <parameter name="targetWalkers">4800</parameter>
-    <parameter name="blocks">500</parameter>
-    <parameter name="steps">500</parameter>
+    <parameter name="blocks">1500</parameter>
+    <parameter name="steps">1000</parameter>
     <parameter name="timestep">0.005</parameter>
     <estimator name="LocalEnergy" hdf5="no"/>
   </qmc>

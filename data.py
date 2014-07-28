@@ -52,7 +52,7 @@ class MrData:
 			# run GAMESS for the first time
 			# ====
 			print("============================================")
-			print("Executing 1st GAMESS caulation with "+self.inp)
+			print("Executing 1st GAMESS calcuation with "+self.inp)
 			print("Check progress in "+self.out)
 			with open(self.out,'w') as outfile:
 				subprocess.call(["rungms",self.inp],stdout=outfile,stderr=gamess_err_file)
