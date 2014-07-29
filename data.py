@@ -236,6 +236,7 @@ class MrData:
 		print("Setting up DMC run")
 		qmcblock="dmc"
 		os.system("sed 's/molecule/"+self.molecule+"/g' "+self.template_main+" > "+qmcblock+".xml")
+		os.system("sed -i \"s/today/$(date)/\" "+qmcblock+".xml")
 		self.fileline2file(qmcblock+".xml","qmcblock",template_dir+qmcblock+".xml")
 		os.system("sed -i 's/"+self.wfs+"/"+self.opt_wfs+"/' "+qmcblock+".xml")
 
