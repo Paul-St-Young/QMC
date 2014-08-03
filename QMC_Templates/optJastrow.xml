@@ -7,12 +7,13 @@
 
 <loop max="5">
   <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
-    <parameter name="blocks">     		200  </parameter>
-    <parameter name="warmupsteps"> 		100 </parameter>
-    <parameter name="substeps"> 		20 </parameter>
-    <parameter name="timestep"> 		0.1 </parameter>
-    <parameter name="samples"> 			3600000 </parameter>
-    <parameter name="stepsbetweensamples"> 	20 </parameter>
+    <parameter name="blocks">     		200	</parameter>
+    <parameter name="steps">                    100	</parameter>
+    <parameter name="warmupsteps"> 		100	</parameter>
+    <parameter name="substeps"> 		20	</parameter>
+    <parameter name="timestep"> 		0.1	</parameter>
+    <parameter name="samples"> 			120000	</parameter>
+    <parameter name="stepsbetweensamples"> 	20	</parameter>
     <cost name="energy">                   	0.5 </cost>
     <cost name="unreweightedvariance">     	0.0 </cost>
     <cost name="reweightedvariance">       	0.5 </cost>
@@ -31,12 +32,13 @@
 
 <loop max="5">
   <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
-    <parameter name="blocks">     		200  </parameter>
-    <parameter name="warmupsteps"> 		100 </parameter>
-    <parameter name="substeps"> 		20 </parameter>
-    <parameter name="timestep"> 		0.1 </parameter>
-    <parameter name="samples"> 			3600000 </parameter>
-    <parameter name="stepsbetweensamples"> 	20 </parameter>
+    <parameter name="blocks">     		200	</parameter>
+    <parameter name="steps">                    100	</parameter>
+    <parameter name="warmupsteps"> 		100	</parameter>
+    <parameter name="substeps"> 		20	</parameter>
+    <parameter name="timestep"> 		0.1	</parameter>
+    <parameter name="samples"> 			120000	</parameter>
+    <parameter name="stepsbetweensamples"> 	20	</parameter>
     <cost name="energy">                   	0.95 </cost>
     <cost name="unreweightedvariance">     	0.0 </cost>
     <cost name="reweightedvariance">       	0.05 </cost>

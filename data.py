@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Author: Paul Young
-# Last Modified: 07/12/2014
+# Last Modified: 08/01/2014
 # Objectified autorun script for GAMESS->QMCPACK calculation on the molecule specified
 
 template_dir = "QMC_Templates/" # remember the trailing /
@@ -26,7 +26,11 @@ class MrData:
 	def __init__(self,thisMolecule):
 		# Tell Mr. Data the name of the molecule you would like to analyze
 		# for example, if the GAMESS input is LiH.inp, then "molecule=LiH"
+		self.known_molecules=[["H","HYDROGEN"],["He","HELIUM"],["Li","LITHIUM"],["Be","BERYLLIUM"],["B","BORON"],["C","CARBON"],["N","NITROGEN"],["O","OXYGEN"],["F","FLUORINE"],["Ne","NEON"]] # this list is ONLY used in setupGMS function
 		self.molecule=thisMolecule
+		self.basis_name=""
+		self.basis_set=""
+		self.z=1
 		
 		# some file names
 		self.inp = self.molecule + ".inp"
@@ -43,7 +47,62 @@ class MrData:
 		self.convert_out = self.molecule+"_convert.out"
 
 		self.template_main = template_dir+"main.xml"
-	
+		
+	def setupGMS(self,basis_file):
+		GMS_Template="GMS_Template.inp"
+		f=open(basis_file,'r')
+		block=[]
+		newblock=""
+		for line in f:
+			newblock+=line
+			if line.lstrip(" ")=="\n":
+				block.append(newblock)
+				newblock=""
+		
+		self.basis_name=block[0].split("\n")[0].split(" ")[2]
+
+		# identify the beginning of basis data
+		for i in range(len(block)):
+			if block[i].split("\n")[0]=="$DATA":
+				start_id=i
+				break
+
+		# extract basis data
+		basis={}
+		for i in range(start_id,len(block)):
+			if i==start_id:
+				basis[block[i].split("\n")[1]]="\n".join( block[i].split("\n")[2:-1] )
+			else:
+				basis[block[i].split("\n")[0]]="\n".join( block[i].split("\n")[1:-1] )
+		
+		# save relevant basis sets
+		found=False
+		z=0
+		for mol in self.known_molecules:
+			z+=1
+			if self.molecule in mol:
+				self.basis_set=basis[mol[-1]]
+				found=True
+				self.z=z
+				break
+		if not found:
+			print "One of the constituents in this material does not match any known terrestrial element"
+			exit(0)
+		
+		# write GMS input
+		with open(self.inp,'w') as inp:
+			inp.write(" ")
+			for line in open(GMS_Template,'r'):
+				line=line.replace("molecule",self.molecule)
+				line=line.replace("basis_name",self.basis_name)
+				line=line.replace("basis_set",self.basis_set)
+				line=line.replace("3",str(self.z))
+				line=line.replace("MULT=2","MULT="+str(2+self.z-3))
+				inp.write(line)
+			
+	# end def setupGMS
+				
+				
 	# ======================= rungms ======================= #
 	def rungms(self,i):
 		# REM use ISPHER=1 at $CONTROL in inp
@@ -111,7 +170,7 @@ class MrData:
 		gamess_err_file.close()
 
 		print("GAMESS calculations completed")
-		print("=========================================")
+		print("========================GMS_Template.inp=================")
 		
 		# blindly reorganize folder for now, should check for completion first.
 		os.system("mkdir gamess;mv *.inp *.out *.dat "+self.gamess_err+" gamess")
@@ -186,6 +245,13 @@ class MrData:
 		tmp_file.close()
 		subprocess.call(["rm",file2edit])
 		subprocess.call(["mv",self.temp,file2edit])
+		
+	def fill_QMCblock(self,qmcblock):
+		os.system("sed 's/molecule/"+self.molecule+"/g' "+self.template_main+" > "+qmcblock+".xml")
+		os.system("sed -i \"s/today/$(date)/\" "+qmcblock+".xml")
+		host_computer=subprocess.check_output(["uname","-a"]).split(" ")[1]
+		os.system("sed -i \"s/host_computer/"+host_computer+"/\" "+qmcblock+".xml")
+		self.fileline2file(qmcblock+".xml","qmcblock",template_dir+qmcblock+".xml")
 	
 	def cuspCorrection(self):
 		# add cuspCorrection and remove jastrow in the wavefunction
@@ -193,17 +259,35 @@ class MrData:
 		self.addOption2QMCline(self.wfs,"<determinantset"," cuspCorrection=\"yes\">\n")
 		self.mvQMCblock("jastrow","jastrow.xml")
 		qmcblock = "cuspCorrection"
-		os.system("sed 's/molecule/"+self.molecule+"/g' "+self.template_main+" > "+qmcblock+".xml")
-		self.fileline2file(qmcblock+".xml","qmcblock",template_dir+qmcblock+".xml")
 		
+		self.fill_QMCblock(qmcblock)
 		print("Executing Cusp Correction")
 		print("Check progress in "+qmcblock+".out")
 		os.system("export OMP_NUM_THREADS=1")
 		with open(qmcblock+".out",'w') as outfile:
 			subprocess.call(["qmcapp",qmcblock+".xml"],stdout=outfile)
+			
+		# modify the wavefunction
+		self.addOption2QMCline(self.wfs,"name=\"spo-up\""," cuspInfo=\"spo-up.cuspInfo.xml\">\n")
+		self.addOption2QMCline(self.wfs,"name=\"spo-dn\""," cuspInfo=\"spo-dn.cuspInfo.xml\">\n")
+		self.add_QMCblock_before(self.wfs,"</wavefunction>","jastrow.xml")
 		
 		# folder management
 		os.system("mkdir cusp;mv newOrbs* *.xml wftest.000 eloc.dat *.out cusp")
+	
+	def vmc(self,tag):
+		vmc_dir="vmc"+tag
+		os.system("mkdir "+vmc_dir)
+		print("Setting up VMC run in "+vmc_dir)
+		
+		# copy necessary files
+		os.system("cp cusp/"+self.wfs+" cusp/"+self.ptcl+" cusp/*.cuspInfo.xml "+vmc_dir)
+		
+		qmcblock="vmc"
+		self.fill_QMCblock(qmcblock)
+		os.system("mv "+qmcblock+".xml "+vmc_dir)
+		print("============================================")
+		
 	
 	# ======================= optJastrow ======================= #
 	def optJastrow(self,tag):
@@ -212,16 +296,10 @@ class MrData:
 		print("Setting up Jastrow Optimization in "+opt_dir)
 		
 		# copy necessary files
-		os.system("cp cusp/"+self.wfs+" cusp/"+self.ptcl+" cusp/*.cuspInfo.xml cusp/jastrow.xml "+opt_dir)
-		
-		# modify the wavefunction
-		self.addOption2QMCline(opt_dir+"/"+self.wfs,"updet"," cuspInfo=\"spo-up.cuspInfo.xml\">\n")
-		self.addOption2QMCline(opt_dir+"/"+self.wfs,"downdet"," cuspInfo=\"spo-dn.cuspInfo.xml\">\n")
-		self.add_QMCblock_before(opt_dir+"/"+self.wfs,"</wavefunction>",opt_dir+"/jastrow.xml")
+		os.system("cp cusp/"+self.wfs+" cusp/"+self.ptcl+" cusp/*.cuspInfo.xml "+opt_dir)
 	
 		qmcblock="optJastrow"
-		os.system("sed 's/molecule/"+self.molecule+"/g' "+self.template_main+" > "+qmcblock+".xml")
-		self.fileline2file(qmcblock+".xml","qmcblock",template_dir+qmcblock+".xml")
+		self.fill_QMCblock(qmcblock)
 		os.system("mv "+qmcblock+".xml "+opt_dir)
 		print("============================================")
 		
@@ -235,9 +313,7 @@ class MrData:
 		print("============================================")
 		print("Setting up DMC run")
 		qmcblock="dmc"
-		os.system("sed 's/molecule/"+self.molecule+"/g' "+self.template_main+" > "+qmcblock+".xml")
-		os.system("sed -i \"s/today/$(date)/\" "+qmcblock+".xml")
-		self.fileline2file(qmcblock+".xml","qmcblock",template_dir+qmcblock+".xml")
+		self.fill_QMCblock(qmcblock)
 		os.system("sed -i 's/"+self.wfs+"/"+self.opt_wfs+"/' "+qmcblock+".xml")
 
 # ======================= main ======================= #
@@ -250,7 +326,9 @@ def main():
 	parser.add_argument("-c", "--convert", action="store_true", help="convert gamess output to qmc input" )
 	parser.add_argument("-cusp", "--cuspCorrection", action="store_true", help="perform cusp correction" )
 	parser.add_argument("-j", "--optJastrow", type=str, help="\'-j tag\' perform jastrow optimization in folder opt$tag" )
+	parser.add_argument("-v", "--runVMC", type=str, help="\'-v tag\' perform VMC run in folder vmc$tag" )
 	parser.add_argument("-d", "--runDMC", action="store_true", help="run Diffusion Monte Carlo" )
+	parser.add_argument("-a", "--all", action="store_true", help="run everything" )
 	args = parser.parse_args()
 	args = parser.parse_args()
 	
@@ -271,8 +349,12 @@ def main():
 		Data.cuspCorrection()
 	if args.optJastrow:
 		Data.optJastrow(args.optJastrow)
+	if args.runVMC:
+		Data.vmc(args.runVMC)
 	if args.runDMC:
 		Data.rundmc()
+	if args.all:
+		Data.setupGMS("BSE_cc-pV5Z-H")
 main()
 
 
