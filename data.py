@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Author: Paul Young
-# Last Modified: 08/01/2014
+# Last Modified: 08/08/2014
 # Objectified autorun script for GAMESS->QMCPACK calculation on the molecule specified
 
 template_dir = "QMC_Templates/" # remember the trailing /
@@ -17,6 +17,7 @@ Prerequisites:
 To do:
 ----
 	1. change all os.system to subprocess.call
+	2. Read # of printed determinants correctly
 """
 
 import os
@@ -27,10 +28,11 @@ class MrData:
 		# Tell Mr. Data the name of the molecule you would like to analyze
 		# for example, if the GAMESS input is LiH.inp, then "molecule=LiH"
 		self.known_molecules=[["H","HYDROGEN"],["He","HELIUM"],["Li","LITHIUM"],["Be","BERYLLIUM"],["B","BORON"],["C","CARBON"],["N","NITROGEN"],["O","OXYGEN"],["F","FLUORINE"],["Ne","NEON"]] # this list is ONLY used in setupGMS function
+		self.best_NACT={'H':1,'He':5,'Li':10,'Be':8,'B':16,'C':12,'N':10,'O':10,'F':9,'Ne':9} # empirical, criteria: SOCI has ~1000 CSF with CI coefficient > 0.0001
+		self.MULT={'H':2,'He':1,'Li':2,'Be':1,'B':2,'C':3,'N':4,'O':3,'F':2,'Ne':1} # Hund's rule
 		self.molecule=thisMolecule
 		self.basis_name=""
 		self.basis_set=""
-		self.z=1
 		
 		# some file names
 		self.inp = self.molecule + ".inp"
@@ -47,10 +49,13 @@ class MrData:
 		self.convert_out = self.molecule+"_convert.out"
 
 		self.template_main = template_dir+"main.xml"
+		self.basis_file="BSE_cc-pV5Z-H"
+		self.z=-1
 		
-	def setupGMS(self,basis_file):
-		GMS_Template="GMS_Template.inp"
-		f=open(basis_file,'r')
+	def setupGMS(self,GMS_Template):
+		f=open(self.basis_file,'r')
+		
+		# split the file into blocks
 		block=[]
 		newblock=""
 		for line in f:
@@ -58,9 +63,8 @@ class MrData:
 			if line.lstrip(" ")=="\n":
 				block.append(newblock)
 				newblock=""
-		
 		self.basis_name=block[0].split("\n")[0].split(" ")[2]
-
+		
 		# identify the beginning of basis data
 		for i in range(len(block)):
 			if block[i].split("\n")[0]=="$DATA":
@@ -96,13 +100,44 @@ class MrData:
 				line=line.replace("molecule",self.molecule)
 				line=line.replace("basis_name",self.basis_name)
 				line=line.replace("basis_set",self.basis_set)
-				line=line.replace("3",str(self.z))
-				line=line.replace("MULT=2","MULT="+str(2+self.z-3))
+				line=line.replace("zcharge",str(self.z)+".0")
+				line=line.replace("NELS=3","NELS="+str(self.z))
+				line=line.replace("NACT=12","NACT="+str(self.best_NACT[self.molecule]))
+				line=line.replace("MULT=2","MULT="+str(self.MULT[self.molecule]))
 				inp.write(line)
-			
+				
+		subprocess.call(["mkdir",self.molecule])
+		subprocess.call(["mv",self.inp,self.molecule])
 	# end def setupGMS
 				
-				
+	def countNORB(self,gamess_dat):
+		in_orbit=False
+		in_vec=False
+		count_NORB=0
+		cur=0
+		prev=-1
+		for line in open(gamess_dat,'r'):
+			if line.find("OPTIMIZED MCSCF")!=-1:
+				in_orbit=True
+			if in_orbit and line.find("$VEC")!=-1:
+				in_vec=True
+			if in_orbit and in_vec:
+				cur = line[:2]
+				if cur!=prev:
+					count_NORB+=1
+				prev=cur
+				if line.find("$END")==-1:
+					NORB=line[:2]
+			if line.find("$END")!=-1:
+				in_vec=False
+				in_orbit=False		
+		count_NORB-=2 # first transition is cur=$ prev=-1, last transition is cur=$,prev=last
+		if (int(NORB)!=int(count_NORB)%100):
+                    	print "Mismatch! NORB="+str(NORB)+" <> count_NORB="+str(count_NORB)
+			exit(0)
+		else:
+			return count_NORB
+			
 	# ======================= rungms ======================= #
 	def rungms(self,i):
 		# REM use ISPHER=1 at $CONTROL in inp
@@ -156,7 +191,7 @@ class MrData:
 				# ----
 			print("Found "+NORB+" orbits, augmenting GUESS to 'GUESS=MOREAD NORB="+NORB+"' in "+self.reinp)
 			os.system("sed 's/GUESS=HCORE/GUESS=MOREAD NORB="+
-				NORB+"/g' <"+self.reinp+" >"+self.temp)
+				NORB+" PRTMO=.T./g' <"+self.reinp+" >"+self.temp)
 			os.system("rm "+self.reinp+"; mv "+self.temp+" "+self.reinp)
 	
 			# rerun GAMESS with MO as GUESS
@@ -170,7 +205,7 @@ class MrData:
 		gamess_err_file.close()
 
 		print("GAMESS calculations completed")
-		print("========================GMS_Template.inp=================")
+		print("=========================================")
 		
 		# blindly reorganize folder for now, should check for completion first.
 		os.system("mkdir gamess;mv *.inp *.out *.dat "+self.gamess_err+" gamess")
@@ -180,7 +215,7 @@ class MrData:
 		# Convert GAMESS output
 		print("Converting GAMESS output to QMCPACK input")
 		with open(self.convert_out,"w") as outfile:
-			subprocess.call(["convert4qmc","-gamessAscii",self.reout,"-ci",self.reout,"-threshold","0.0001","-add3BodyJ"],stdout=outfile)
+			subprocess.call(["convert4qmc","-gamessAscii",self.reout,"-ci",self.reout,"-readInitialGuess",str(self.countNORB("gamess/"+self.molecule+".dat")),"-threshold","0.0001","-add3BodyJ"],stdout=outfile)
 	
 		# folder management
 		# ====
@@ -281,13 +316,15 @@ class MrData:
 		print("Setting up VMC run in "+vmc_dir)
 		
 		# copy necessary files
-		os.system("cp cusp/"+self.wfs+" cusp/"+self.ptcl+" cusp/*.cuspInfo.xml "+vmc_dir)
+		#os.system("cp cusp/"+self.wfs+" cusp/"+self.ptcl+" cusp/*.cuspInfo.xml "+vmc_dir)
+		os.system("cp convert/"+self.wfs+" convert/"+self.ptcl+" .")
+		self.mvQMCblock("jastrow","jastrow.xml")
+		os.system("mv "+self.wfs+" "+self.ptcl+" jastrow.xml "+vmc_dir)
 		
 		qmcblock="vmc"
 		self.fill_QMCblock(qmcblock)
 		os.system("mv "+qmcblock+".xml "+vmc_dir)
 		print("============================================")
-		
 	
 	# ======================= optJastrow ======================= #
 	def optJastrow(self,tag):
@@ -328,7 +365,7 @@ def main():
 	parser.add_argument("-j", "--optJastrow", type=str, help="\'-j tag\' perform jastrow optimization in folder opt$tag" )
 	parser.add_argument("-v", "--runVMC", type=str, help="\'-v tag\' perform VMC run in folder vmc$tag" )
 	parser.add_argument("-d", "--runDMC", action="store_true", help="run Diffusion Monte Carlo" )
-	parser.add_argument("-a", "--all", action="store_true", help="run everything" )
+	parser.add_argument("-a", "--all", type=str, help="run everything with a given GAMESS input Template. For example, 'data.py -a GMS_Template.inp H' will run everything for Hydrogen atom" )
 	args = parser.parse_args()
 	args = parser.parse_args()
 	
@@ -354,7 +391,9 @@ def main():
 	if args.runDMC:
 		Data.rundmc()
 	if args.all:
-		Data.setupGMS("BSE_cc-pV5Z-H")
+		Data.setupGMS(args.all)
+		#os.chdir(Data.molecule)
+		#Data.rungms(0)
 main()
 
 

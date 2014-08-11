@@ -6,35 +6,15 @@
     <parameter name="steps">100</parameter>
     <parameter name="subSteps"> 20 </parameter>
     <parameter name="walkers">1</parameter>
-    <parameter name="samples">120000</parameter>
+    <parameter name="samples">2400</parameter>
     <parameter name="timestep">0.5</parameter>
     <estimator name="LocalEnergy" hdf5="no"/>
   </qmc>
 
   <!-- DMC -->
-  <qmc method="dmc" move="pbyp" checkpoint="-1">
+  <qmc method="dmc" move="pbyp" checkpoint="100">
     <parameter name="nonlocalmoves">yes</parameter>
-    <parameter name="targetWalkers">120000</parameter>
-    <parameter name="blocks">100</parameter>
-    <parameter name="steps">100</parameter>
-    <parameter name="timestep">0.01</parameter>
-    <estimator name="LocalEnergy" hdf5="no"/>
-  </qmc>
-
-  <!-- DMC -->
-  <qmc method="dmc" move="pbyp" checkpoint="-1">
-    <parameter name="nonlocalmoves">yes</parameter>
-    <parameter name="targetWalkers">120000</parameter>
-    <parameter name="blocks">100</parameter>
-    <parameter name="steps">200</parameter>
-    <parameter name="timestep">0.005</parameter>
-    <estimator name="LocalEnergy" hdf5="no"/>
-  </qmc>
-
-  <!-- DMC -->
-  <qmc method="dmc" move="pbyp" checkpoint="-1">
-    <parameter name="nonlocalmoves">yes</parameter>
-    <parameter name="targetWalkers">120000</parameter>
+    <parameter name="targetWalkers">2400</parameter>
     <parameter name="blocks">100</parameter>
     <parameter name="steps">1000</parameter>
     <parameter name="timestep">0.001</parameter>

@@ -35,14 +35,26 @@ class GAMESS:
 		return n_basis/2-2
 		
 	def main_loop(self):
+		prt=0
 		for line in open(self.gmsout,'r'):
 			for entry in ENTRIES:
 				self.grab(entry,line)
-			
-
+			# check for errors
+			if line.find("WARNING")!=-1:
+				prt=3
+				if line.find("NORMALIZATION")!=-1:
+					prt=0
+				if line.find("MCSCF POPULATIONS")!=-1:
+					prt=0
+			if prt>0:
+				print line.rstrip("\n")
+				prt-=1
 
 beh=GAMESS(sys.argv[1])
 print "============================================="
 print " Analyzing GAMESS output " + sys.argv[1]
 beh.main_loop()
 print "TOTAL NUMBER OF DET =",beh.count_basis()
+# check errors in output
+	# CI eigenvector not found?
+	# Occupation of orbital too small?
