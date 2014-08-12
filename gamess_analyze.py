@@ -5,7 +5,7 @@ Author: Paul Young
 Last Modified: July 28 2014
 """
 
-ENTRIES=["TOTAL ENERGY =", "FINAL MCSCF ENERGY IS"]
+ENTRIES=["TOTAL ENERGY =", "FINAL MCSCF ENERGY IS","COMPUTING THE HAMILTONIAN FOR"]
 
 import sys
 
@@ -34,6 +34,22 @@ class GAMESS:
 				n_basis+=1
 		return n_basis/2-2
 		
+	def count_CSF(self):
+	# count # CSF 
+		in_basis = False
+		n_basis = 0
+		for line in open(self.gmsout,'r'):
+			if line.find("CSF")!=-1 and line.find("OCCUPANCY")!=-1:
+				in_basis = True
+			if in_basis:
+				if len(line.lstrip(" ").split(" "))!=1:
+					n_basis+=1
+			if line.find("END OF CI-MATRIX DIAGONALIZATION")!=-1:
+				in_basis=False
+				break
+		n_basis-=3
+		return n_basis
+		
 	def main_loop(self):
 		prt=0
 		for line in open(self.gmsout,'r'):
@@ -55,6 +71,8 @@ print "============================================="
 print " Analyzing GAMESS output " + sys.argv[1]
 beh.main_loop()
 print "TOTAL NUMBER OF DET =",beh.count_basis()
+print "TOTAL NUMBER OF CSF =",beh.count_CSF()
+
 # check errors in output
 	# CI eigenvector not found?
 	# Occupation of orbital too small?

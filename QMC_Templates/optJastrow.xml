@@ -54,3 +54,13 @@
     <parameter name="nstabilizers"> 1 </parameter>
   </qmc>
 </loop>
+
+  <qmc method="vmc" move="pbyp" checkpoint="-1">
+    <parameter name="blocks">                   100     </parameter>
+    <parameter name="steps">                    100     </parameter>
+    <parameter name="warmupsteps">              100     </parameter>
+    <parameter name="substeps">                 20      </parameter>
+    <parameter name="timestep">                 0.1     </parameter>
+    <parameter name="useDrift">  yes </parameter>
+  </qmc>
+

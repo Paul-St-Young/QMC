@@ -28,7 +28,7 @@ class MrData:
 		# Tell Mr. Data the name of the molecule you would like to analyze
 		# for example, if the GAMESS input is LiH.inp, then "molecule=LiH"
 		self.known_molecules=[["H","HYDROGEN"],["He","HELIUM"],["Li","LITHIUM"],["Be","BERYLLIUM"],["B","BORON"],["C","CARBON"],["N","NITROGEN"],["O","OXYGEN"],["F","FLUORINE"],["Ne","NEON"]] # this list is ONLY used in setupGMS function
-		self.best_NACT={'H':1,'He':5,'Li':10,'Be':8,'B':16,'C':12,'N':10,'O':10,'F':9,'Ne':9} # empirical, criteria: SOCI has ~1000 CSF with CI coefficient > 0.0001
+		self.best_NACT={'H':1,'He':5,'Li':14,'Be':14,'B':13,'C':10,'N':16,'O':14,'F':14,'Ne':9} # empirical, criteria: SOCI has ~1000 CSF with CI coefficient > 0.0001
 		self.MULT={'H':2,'He':1,'Li':2,'Be':1,'B':2,'C':3,'N':4,'O':3,'F':2,'Ne':1} # Hund's rule
 		self.molecule=thisMolecule
 		self.basis_name=""
@@ -201,6 +201,7 @@ class MrData:
 	
 			with open(self.reout,'w') as outfile:
 				subprocess.call(["rungms",self.reinp],stdout=outfile,stderr=gamess_err_file)
+		# end if i==2
 				
 		gamess_err_file.close()
 
@@ -359,7 +360,7 @@ import argparse
 def main():
 	parser = argparse.ArgumentParser(description='LtCdr. Data at your service. I can analyze the properties of unknown materials if sufficient information regarding its constituents is available.')
 	parser.add_argument("molecule", help="molecule to analyze. (name of the rungms input file should be 'molecule.inp')")
-	parser.add_argument("-g", "--gms", type=int, choices=[0,1,2], help="run gamess calculation (you may specify if it's the 1st or 2nd calculation, if 0 is given I'll run both)" )
+	parser.add_argument("-g", "--gms", type=int, choices=[0,1,2,3], help="run gamess calculation 1=CAS, 2=CAS_rerun, 3=SOCI, 0=all" )
 	parser.add_argument("-c", "--convert", action="store_true", help="convert gamess output to qmc input" )
 	parser.add_argument("-cusp", "--cuspCorrection", action="store_true", help="perform cusp correction" )
 	parser.add_argument("-j", "--optJastrow", type=str, help="\'-j tag\' perform jastrow optimization in folder opt$tag" )
