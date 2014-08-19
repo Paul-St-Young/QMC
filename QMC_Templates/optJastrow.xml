@@ -1,19 +1,20 @@
 <!--
  	1. samples/numberofthreads=samplesperthread=blocks*steps*stepsbetweensamples 
 		==> specifying samples, blocks and stepsbetweensamples will let QMCPACK decide "steps" depending on the numberofthreads
-	2. substep helps for some reason (hypothesis: it helps decorrelate the samples - test: use big stepsbetweensamples)
-	3. small timestep helps for some reason (hypothesis: it improves the accuracy of energy but not the quality of the wave function - test: add a trailing VMC block) 
+	* QMC Traning Best Practice: 
+		a. Use steps=stepsbetweensamples=1, adjust substep to decorrelate.
+		b. samples=blocks*N_threads  
+	2. small timestep helps for some reason (hypothesis: it improves the accuracy of energy but not the quality of the wave function - test: add a trailing VMC block) 
 -->
 
 <loop max="3">
   <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
-    <parameter name="blocks">     		100	</parameter>
-    <parameter name="steps">                    100	</parameter>
+    <parameter name="blocks">     		1000	</parameter>
+    <parameter name="steps">                    1	</parameter>
     <parameter name="warmupsteps"> 		100	</parameter>
-    <parameter name="substeps"> 		20	</parameter>
+    <parameter name="substeps"> 		200	</parameter>
     <parameter name="timestep"> 		0.1	</parameter>
-    <parameter name="samples"> 			24000	</parameter>
-    <parameter name="stepsbetweensamples"> 	20	</parameter>
+    <parameter name="samples"> 			3600000	</parameter>
     <cost name="energy">                   	0.5 </cost>
     <cost name="unreweightedvariance">     	0.0 </cost>
     <cost name="reweightedvariance">       	0.5 </cost>
@@ -32,13 +33,12 @@
 
 <loop max="3">
   <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
-    <parameter name="blocks">     		100	</parameter>
-    <parameter name="steps">                    100	</parameter>
+    <parameter name="blocks">     		1000	</parameter>
+    <parameter name="steps">                    1	</parameter>
     <parameter name="warmupsteps"> 		100	</parameter>
-    <parameter name="substeps"> 		20	</parameter>
+    <parameter name="substeps"> 		200	</parameter>
     <parameter name="timestep"> 		0.1	</parameter>
-    <parameter name="samples"> 			24000	</parameter>
-    <parameter name="stepsbetweensamples"> 	20	</parameter>
+    <parameter name="samples"> 			3600000	</parameter>
     <cost name="energy">                   	0.95 </cost>
     <cost name="unreweightedvariance">     	0.0 </cost>
     <cost name="reweightedvariance">       	0.05 </cost>
@@ -54,13 +54,3 @@
     <parameter name="nstabilizers"> 1 </parameter>
   </qmc>
 </loop>
-
-  <qmc method="vmc" move="pbyp" checkpoint="-1">
-    <parameter name="blocks">                   100     </parameter>
-    <parameter name="steps">                    100     </parameter>
-    <parameter name="warmupsteps">              100     </parameter>
-    <parameter name="substeps">                 20      </parameter>
-    <parameter name="timestep">                 0.1     </parameter>
-    <parameter name="useDrift">  yes </parameter>
-  </qmc>
-
