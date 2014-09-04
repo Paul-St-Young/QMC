@@ -216,7 +216,8 @@ class MrData:
 		# Convert GAMESS output
 		print("Converting GAMESS output to QMCPACK input")
 		with open(self.convert_out,"w") as outfile:
-			subprocess.call(["convert4qmc","-gamessAscii",self.reout,"-ci",self.reout,"-readInitialGuess",str(self.countNORB("gamess/"+self.molecule+".dat")),"-threshold","0.0001","-add3BodyJ"],stdout=outfile)
+			#subprocess.call(["convert4qmc","-gamessAscii",self.reout,"-ci",self.reout,"-readInitialGuess",str(self.countNORB("gamess/"+self.molecule+".dat")),"-threshold","0.0001","-add3BodyJ"],stdout=outfile)
+			subprocess.call(["convert4qmc","-gamessAscii",self.reout,"-ci",self.reout,"-threshold","0.0001","-add3BodyJ"],stdout=outfile)
 	
 		# folder management
 		# ====
@@ -346,13 +347,21 @@ class MrData:
 			#subprocess.call(["qmcapp",qmcblock+".xml"],stdout=outfile)
 	
 	# ======================= rundmc ======================= #
-	def rundmc(self):
+	def rundmc(self,tag):
+		dmc_dir="dmc"+tag
+		os.system("mkdir "+dmc_dir)
+		
 		# write molecule-specified data to qmc template
-		print("============================================")
 		print("Setting up DMC run")
 		qmcblock="dmc"
 		self.fill_QMCblock(qmcblock)
 		os.system("sed -i 's/"+self.wfs+"/"+self.opt_wfs+"/' "+qmcblock+".xml")
+		os.system("mv "+qmcblock+".xml "+dmc_dir)
+		
+		# !!!!! Dangerous hard code !!!!!
+		# by default use opt0/$molecule.s006.opt.xml
+		os.system("cd opt0;cp spo-* "+self.molecule+".s006.opt.xml "+self.molecule+"_ptcl.xml ../"+dmc_dir)
+		os.system("cd "+dmc_dir+";mv "+self.molecule+".s006.opt.xml "+self.molecule+"_opt_wfs.xml")
 
 # ======================= main ======================= #
 import argparse
@@ -365,7 +374,7 @@ def main():
 	parser.add_argument("-cusp", "--cuspCorrection", action="store_true", help="perform cusp correction" )
 	parser.add_argument("-j", "--optJastrow", type=str, help="\'-j tag\' perform jastrow optimization in folder opt$tag" )
 	parser.add_argument("-v", "--runVMC", type=str, help="\'-v tag\' perform VMC run in folder vmc$tag" )
-	parser.add_argument("-d", "--runDMC", action="store_true", help="run Diffusion Monte Carlo" )
+	parser.add_argument("-d", "--runDMC", type=str, help="Setup Diffusion Monte Carlo" )
 	parser.add_argument("-a", "--all", type=str, help="run everything with a given GAMESS input Template. For example, 'data.py -a GMS_Template.inp H' will run everything for Hydrogen atom" )
 	args = parser.parse_args()
 	args = parser.parse_args()
@@ -390,7 +399,7 @@ def main():
 	if args.runVMC:
 		Data.vmc(args.runVMC)
 	if args.runDMC:
-		Data.rundmc()
+		Data.rundmc(args.runDMC)
 	if args.all:
 		Data.setupGMS(args.all)
 		#os.chdir(Data.molecule)
