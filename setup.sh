@@ -34,5 +34,6 @@ git config --global user.name "Paul Young"
 git config --global user.email "yyang173@illinois.edu"
 git config --global core.editor vi
 git config --global color.ui true
+git config --global push.default simple
 rm -rf Templates
 mv QMC Templates

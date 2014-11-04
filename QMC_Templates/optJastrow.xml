@@ -8,16 +8,17 @@
 -->
 
 <loop max="5">
-  <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
-    <parameter name="blocks">     		1000	</parameter>
-    <parameter name="steps">                    1	</parameter>
-    <parameter name="warmupsteps"> 		100	</parameter>
-    <parameter name="substeps"> 		200	</parameter>
-    <parameter name="timestep"> 		0.1	</parameter>
-    <parameter name="samples"> 			3200000	</parameter>
-    <cost name="energy">                   	0.5 </cost>
-    <cost name="unreweightedvariance">     	0.0 </cost>
-    <cost name="reweightedvariance">       	0.5 </cost>
+ <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
+    <parameter name="samples">                  2400000 </parameter>
+    <parameter name="substeps">                 10      </parameter>
+
+    <parameter name="blocks">                   1000    </parameter>
+    <parameter name="steps">                    100     </parameter>
+    <parameter name="warmupsteps">              100     </parameter>
+    <parameter name="timestep">                 0.1     </parameter>
+    <cost name="energy">                        0.5 </cost>
+    <cost name="unreweightedvariance">          0.0 </cost>
+    <cost name="reweightedvariance">            0.5 </cost>
     <parameter name="useDrift">  yes </parameter>
     <parameter name="bigchange">10.0</parameter>
     <estimator name="LocalEnergy" hdf5="no"/>
