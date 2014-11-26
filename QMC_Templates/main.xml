@@ -1,7 +1,7 @@
 <simulation>
 
 	<project id="molecule" series="1">
-		<application name="qmcapp" role="molecu" class="serial" version="0.2">                                   
+		<application name="qmcapp" role="molecu" class="serial" version="0.2">
 		molecule GAMESS to QMC calculation
 		</application>
 		<host>host_computer</host>

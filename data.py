@@ -319,9 +319,9 @@ class MrData:
 		
 		# copy necessary files
 		#os.system("cp cusp/"+self.wfs+" cusp/"+self.ptcl+" cusp/*.cuspInfo.xml "+vmc_dir)
-		os.system("cp convert/"+self.wfs+" convert/"+self.ptcl+" .")
+		os.system("cp cusp/"+self.wfs+" cusp/"+self.ptcl+" cusp/spo*"+" .")
 		self.mvQMCblock("jastrow","jastrow.xml")
-		os.system("mv "+self.wfs+" "+self.ptcl+" jastrow.xml "+vmc_dir)
+		os.system("mv "+self.wfs+" "+self.ptcl+" spo*"+" jastrow.xml "+vmc_dir)
 		
 		qmcblock="vmc"
 		self.fill_QMCblock(qmcblock)
@@ -359,9 +359,9 @@ class MrData:
 		os.system("mv "+qmcblock+".xml "+dmc_dir)
 		
 		# !!!!! Dangerous hard code !!!!!
-		# by default use opt0/$molecule.s006.opt.xml
-		os.system("cd opt0;cp spo-* "+self.molecule+".s006.opt.xml "+self.molecule+"_ptcl.xml ../"+dmc_dir)
-		os.system("cd "+dmc_dir+";mv "+self.molecule+".s006.opt.xml "+self.molecule+"_opt_wfs.xml")
+		# by default use opt0/$molecule.s005.opt.xml
+		os.system("cd opt0;cp spo-* "+self.molecule+".s005.opt.xml "+self.molecule+"_ptcl.xml ../"+dmc_dir)
+		os.system("cd "+dmc_dir+";mv "+self.molecule+".s005.opt.xml "+self.molecule+"_opt_wfs.xml")
 
 # ======================= main ======================= #
 import argparse

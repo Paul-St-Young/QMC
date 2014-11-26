@@ -1,4 +1,7 @@
-<qmc method="test">                                      
-  <printEloc>yes</printEloc>
-  <source>ion0</source>
-</qmc> 
+  <qmc method="vmc" move="pbyp" checkpoint="-1">
+    <parameter name="useDrift">         yes	</parameter>
+    <parameter name="warmupSteps">      100	</parameter>
+    <parameter name="blocks">           100	</parameter>
+    <parameter name="steps">            10	</parameter>
+    <parameter name="timestep">         0.1	</parameter>
+  </qmc>

@@ -7,16 +7,12 @@
     <parameter name="warmupSteps">	100	</parameter>
     <parameter name="timestep">		0.5	</parameter>
     <parameter name="useDrift">		yes	</parameter>
-    <estimator name="LocalEnergy" hdf5="no"/>
   </qmc>
 
   <!-- DMC -->
-  <qmc method="dmc" move="pbyp" checkpoint="100">
-    <parameter name="targetWalkers">	32000	</parameter>
+  <qmc method="dmc" move="pbyp" checkpoint="10">
+    <parameter name="targetWalkers">	3200	</parameter>
     <parameter name="timestep">		0.0001	</parameter>
     <parameter name="blocks">		1000	</parameter>
     <parameter name="steps">		1000	</parameter>
-
-    <parameter name="nonlocalmoves">	yes	</parameter>
-    <estimator name="LocalEnergy" hdf5="no"/>
   </qmc>
