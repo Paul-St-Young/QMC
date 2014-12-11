@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Execute as superuser to setup Linux box for GAMESS and QMCPACK
+
 # ===================== PACKAGES ===================== #
 # install essential packages
 apt-get install vim cmake build-essential libopenmpi-dev openmpi-bin
@@ -19,11 +21,12 @@ echo "" >> $RC
 echo "\# custom software"
 echo "SOFTWARE=/home/`whoami`/Software" >> $RC
 echo "PATH=\$PATH:\$SOFTWARE/qmcpack/build/bin:\$SOFTWARE/gamess" >> $RC
-echo "PATH=\$PATH:\$SOFTWARE/qmcpack/project_suite/executables" >> $RC
+echo "PATH=\$PATH:\$SOFTWARE/qmcpack/nexus/executables" >> $RC
+echo "export PYTHONPATH=\$SOFTWARE/qmcpack/nexus/library" >> $RC
 
 # ===================== SHARED MEM ===================== #
 echo "" >> /etc/sysctl.conf
-echo "\# increase shared memory to 2GB" >> /etc/sysctl.conf
+echo "# increase shared memory to 2GB" >> /etc/sysctl.conf
 echo "kernel.shmmax=2147483648" >> /etc/sysctl.conf
 echo "kernel.shmall=2147483648" >> /etc/sysctl.conf
 
