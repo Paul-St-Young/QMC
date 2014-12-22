@@ -319,9 +319,9 @@ class MrData:
 		
 		# copy necessary files
 		#os.system("cp cusp/"+self.wfs+" cusp/"+self.ptcl+" cusp/*.cuspInfo.xml "+vmc_dir)
-		os.system("cp cusp/"+self.wfs+" cusp/"+self.ptcl+" cusp/spo*"+" .")
+		os.system("cp cusp/"+self.wfs+" cusp/"+self.ptcl+" cusp/*cuspInfo.xml"+" .")
 		self.mvQMCblock("jastrow","jastrow.xml")
-		os.system("mv "+self.wfs+" "+self.ptcl+" spo*"+" jastrow.xml "+vmc_dir)
+		os.system("mv "+self.wfs+" "+self.ptcl+" *cuspInfo.xml"+" jastrow.xml "+vmc_dir)
 		
 		qmcblock="vmc"
 		self.fill_QMCblock(qmcblock)
@@ -363,6 +363,22 @@ class MrData:
 		os.system("cd opt0;cp spo-* "+self.molecule+".s005.opt.xml "+self.molecule+"_ptcl.xml ../"+dmc_dir)
 		os.system("cd "+dmc_dir+";mv "+self.molecule+".s005.opt.xml "+self.molecule+"_opt_wfs.xml")
 
+	# ======================= runnoBO ======================= #
+	def runnoBO(self,tag):
+		dmc_dir="noBO"+tag
+		os.system("mkdir "+dmc_dir)
+		
+		# write molecule-specified data to qmc template
+		print("Setting up noBO run")
+		qmcblock="noBO"
+		self.fill_QMCblock(qmcblock)
+		os.system("sed -i 's/"+self.wfs+"/"+self.opt_wfs+"/' "+qmcblock+".xml")
+		os.system("mv "+qmcblock+".xml "+dmc_dir)
+		
+		# !!!!! Dangerous hard code !!!!!
+		# by default use dmc0/$molecule_opt_wfs.xml
+		os.system("cd dmc0;cp spo-* "+self.molecule+"_opt_wfs.xml "+self.molecule+"_ptcl.xml ../"+dmc_dir)
+
 # ======================= main ======================= #
 import argparse
 
@@ -375,6 +391,7 @@ def main():
 	parser.add_argument("-j", "--optJastrow", type=str, help="\'-j tag\' perform jastrow optimization in folder opt$tag" )
 	parser.add_argument("-v", "--runVMC", type=str, help="\'-v tag\' perform VMC run in folder vmc$tag" )
 	parser.add_argument("-d", "--runDMC", type=str, help="Setup Diffusion Monte Carlo" )
+	parser.add_argument("-n", "--runnoBO", type=str, help="Non-adiabatic DMC" )
 	parser.add_argument("-a", "--all", type=str, help="run everything with a given GAMESS input Template. For example, 'data.py -a GMS_Template.inp H' will run everything for Hydrogen atom" )
 	args = parser.parse_args()
 	args = parser.parse_args()
@@ -400,6 +417,8 @@ def main():
 		Data.vmc(args.runVMC)
 	if args.runDMC:
 		Data.rundmc(args.runDMC)
+	if args.runnoBO:
+		Data.runnoBO(args.runnoBO)
 	if args.all:
 		Data.setupGMS(args.all)
 		#os.chdir(Data.molecule)

@@ -1,11 +1,11 @@
-<!-- Run on 204800 cores (12800 nodes) -->
+<!-- Run on 60000 cores (3750 nodes) -->
 <loop max="5">
   <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
-    <parameter name="samples">		204800000 	</parameter>
+    <parameter name="samples">		6000000 	</parameter>
     <parameter name="substeps">		10		</parameter>
     <parameter name="timestep">		0.1		</parameter>
 
-    <parameter name="blocks">		1000		</parameter>
+    <parameter name="blocks">		100		</parameter>
     <parameter name="steps">		1		</parameter>
     <parameter name="warmupsteps">	100		</parameter>
     <cost name="energy">		0.5		</cost>
