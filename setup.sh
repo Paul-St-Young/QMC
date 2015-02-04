@@ -4,10 +4,13 @@
 
 # ===================== PACKAGES ===================== #
 # install essential packages
-apt-get install vim cmake build-essential libopenmpi-dev openmpi-bin
-apt-get install libboost-dev libatlas-base-dev liblapack-dev libhdf5-dev
-apt-get install fftw3-dev libxml2-dev python-numpy python-matplotlib
-apt-get install git valgrind
+apt-get install vim cmake git valgrind build-essential 
+# for QMCPACK
+apt-get install libopenmpi-dev openmpi-bin libboost-dev fftw3-dev
+apt-get install liblapack-dev libhdf5-dev libxml2-dev
+apt-get install python-numpy python-matplotlib
+# for GAMESS
+apt-get install libatlas-base-dev
 
 # ===================== .BASHRC ===================== #
 # back up .bashrc
@@ -18,7 +21,7 @@ fi
 
 # modify .bashrc
 echo "" >> $RC
-echo "\# custom software"
+echo "# custom software"
 echo "SOFTWARE=/home/`whoami`/Software" >> $RC
 echo "PATH=\$PATH:\$SOFTWARE/qmcpack/build/bin:\$SOFTWARE/gamess" >> $RC
 echo "PATH=\$PATH:\$SOFTWARE/qmcpack/nexus/executables" >> $RC
