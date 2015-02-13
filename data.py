@@ -377,7 +377,7 @@ class MrData:
 		
 		# !!!!! Dangerous hard code !!!!!
 		# by default use dmc0/$molecule_opt_wfs.xml
-		os.system("cd dmc0;cp spo-* "+self.molecule+"_opt_wfs.xml "+self.molecule+"_ptcl.xml ../"+dmc_dir)
+		os.system("cd dmc0;cp *cuspInfo* "+self.molecule+"_opt_wfs.xml "+self.molecule+"_ptcl.xml ../"+dmc_dir)
 
 # ======================= main ======================= #
 import argparse

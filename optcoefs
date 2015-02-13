@@ -1,7 +1,13 @@
 #!/bin/bash
 
-linenum=`grep -n detlist *_wfs.xml | head -n 1 | awk '{print $1}' | sed "s/://"`
 for i in {1..5}; do
+	linenum=`grep -n detlist *.s00$i.opt.xml | head -n 1 | awk '{print $1}' | sed "s/://"`
 	coefline=$((linenum+$1))
-	sed "${coefline}!d" *.s00$i.opt.xml | awk '{print $3}'
+	det=`sed "${coefline}!d" *.s00$i.opt.xml | awk '{print $1}' | sed "s/<//"`
+	if [ $det == "csf" ]; then
+		sed "${coefline}!d" *.s00$i.opt.xml | awk '{print $4}'
+	fi
+	if [ $det == "ci" ]; then
+                sed "${coefline}!d" *.s00$i.opt.xml | awk '{print $3}'
+        fi
 done
