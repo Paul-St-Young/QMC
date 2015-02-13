@@ -360,7 +360,7 @@ class MrData:
 		
 		# !!!!! Dangerous hard code !!!!!
 		# by default use opt0/$molecule.s005.opt.xml
-		os.system("cd opt0;cp spo-* "+self.molecule+".s005.opt.xml "+self.molecule+"_ptcl.xml ../"+dmc_dir)
+		os.system("cd opt0;cp *cuspInfo* "+self.molecule+".s005.opt.xml "+self.molecule+"_ptcl.xml ../"+dmc_dir)
 		os.system("cd "+dmc_dir+";mv "+self.molecule+".s005.opt.xml "+self.molecule+"_opt_wfs.xml")
 
 	# ======================= runnoBO ======================= #
