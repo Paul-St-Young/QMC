@@ -18,6 +18,7 @@
 	<pairpot name="ElecElec" type="coulomb" source="e" target="e"/>
 	<pairpot name="Coulomb" type="coulomb" source="ion0" target="e"/>
 	<pairpot name="IonIon" type="coulomb" source="ion0" target="ion0"/>
+	<estimator type="gofr" name="gofr" num_bin="400" rmax="5.0" source="ion0"/>
 	</hamiltonian>
 
 	<include href="qmcblock.xml"/>

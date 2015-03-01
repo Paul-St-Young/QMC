@@ -1,35 +1,35 @@
   <qmc method="vmc" move="pbyp" checkpoint="-1">
     <parameter name="useDrift">         yes     </parameter>
-    <parameter name="warmupSteps">      100     </parameter>
-    <parameter name="blocks">           1000	</parameter>
-    <parameter name="steps">            10      </parameter>
-    <parameter name="timestep">         0.001   </parameter>
+    <parameter name="warmupSteps">      500     </parameter>
+    <parameter name="blocks">           1000    </parameter>
+    <parameter name="steps">            40      </parameter>
+    <parameter name="timestep">         0.01   </parameter>
+  </qmc>
+  <qmc method="vmc" move="pbyp" checkpoint="-1">
+    <parameter name="useDrift">         yes     </parameter>
+    <parameter name="warmupSteps">      300     </parameter>
+    <parameter name="blocks">           1000    </parameter>
+    <parameter name="steps">            40      </parameter>
+    <parameter name="timestep">         0.02    </parameter>
+  </qmc>
+  <qmc method="vmc" move="pbyp" checkpoint="-1">
+    <parameter name="useDrift">         yes     </parameter>
+    <parameter name="warmupSteps">      200     </parameter>
+    <parameter name="blocks">           1000    </parameter>
+    <parameter name="steps">            40      </parameter>
+    <parameter name="timestep">         0.05     </parameter>
   </qmc>
   <qmc method="vmc" move="pbyp" checkpoint="-1">
     <parameter name="useDrift">         yes     </parameter>
     <parameter name="warmupSteps">      100     </parameter>
-    <parameter name="blocks">           1000	</parameter>
-    <parameter name="steps">            10      </parameter>
-    <parameter name="timestep">         0.01    </parameter>
-  </qmc>
-  <qmc method="vmc" move="pbyp" checkpoint="-1">
-    <parameter name="useDrift">         yes     </parameter>
-    <parameter name="warmupSteps">      100     </parameter>
-    <parameter name="blocks">           1000	</parameter>
-    <parameter name="steps">            10      </parameter>
+    <parameter name="blocks">           1000    </parameter>
+    <parameter name="steps">            40      </parameter>
     <parameter name="timestep">         0.1     </parameter>
   </qmc>
   <qmc method="vmc" move="pbyp" checkpoint="-1">
     <parameter name="useDrift">         yes     </parameter>
     <parameter name="warmupSteps">      100     </parameter>
-    <parameter name="blocks">           1000	</parameter>
-    <parameter name="steps">            10      </parameter>
-    <parameter name="timestep">         0.5     </parameter>
-  </qmc>
-  <qmc method="vmc" move="pbyp" checkpoint="-1">
-    <parameter name="useDrift">         yes     </parameter>
-    <parameter name="warmupSteps">      100     </parameter>
-    <parameter name="blocks">           1000	</parameter>
-    <parameter name="steps">            10      </parameter>
-    <parameter name="timestep">         1.0     </parameter>
+    <parameter name="blocks">           1000    </parameter>
+    <parameter name="steps">            40      </parameter>
+    <parameter name="timestep">         0.2     </parameter>
   </qmc>

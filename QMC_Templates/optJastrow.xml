@@ -1,8 +1,7 @@
-<!-- Run on 60000 cores (3750 nodes) -->
 <loop max="5">
   <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
-    <parameter name="samples">		6000000 	</parameter>
-    <parameter name="substeps">		10		</parameter>
+    <parameter name="samples">		96000		</parameter>
+    <parameter name="substeps">		40		</parameter>
     <parameter name="timestep">		0.1		</parameter>
 
     <parameter name="blocks">		100		</parameter>
