@@ -394,7 +394,6 @@ def main():
 	parser.add_argument("-n", "--runnoBO", type=str, help="Non-adiabatic DMC" )
 	parser.add_argument("-a", "--all", type=str, help="run everything with a given GAMESS input Template. For example, 'data.py -a GMS_Template.inp H' will run everything for Hydrogen atom" )
 	args = parser.parse_args()
-	args = parser.parse_args()
 	
 	Data=MrData(args.molecule)
 	
