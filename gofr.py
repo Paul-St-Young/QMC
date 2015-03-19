@@ -107,7 +107,7 @@ if __name__=="__main__":
                     if slices[k]==-1:
                         slices[k]=nwindow-1
                     # end if
-                    start,end = get_start_and_end(ar[k],1e-4)
+                    start,end = get_start_and_end(ar[k],1e-2)
                     coeff = fit_gaussian(r,ar[k],start,end)
                     A,mean,sigma = coeff
                     print species_map[i]+"-"+species_map[j] + " window " + str(slices[k]+1) + " mu=" + str( round(mean,3) ) + " var=" + str( round(sigma*sigma,3) )
