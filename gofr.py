@@ -7,7 +7,7 @@ from scipy.optimize import curve_fit
 import numpy as np
 import argparse
 
-slices = [0,1,2,3]
+slices = [0,1]
 species_map={'0':'C','1':'N','2':'H'}
 #species_map={'0':'Li','1':'H'}
 

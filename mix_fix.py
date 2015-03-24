@@ -141,6 +141,8 @@ def perform_quick_fix(vmcfile,dmcfile,vw=4000,dw=500):
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description='Use g(r) to fix wf')
+    parser.add_argument('VMC',type=str,help='h5 file containing VMC gofr')
+    parser.add_argument('DMC',type=str,help='h5 file containing VMC gofr')
     parser.add_argument("-vw", "--VMCwindowSize", type=int, default=4000
                         , help="size of time slice window in steps" )
     parser.add_argument("-dw", "--DMCwindowSize", type=int, default=500
@@ -157,7 +159,7 @@ if __name__=="__main__":
     '''
 
     # quick fixed
-    r,fixed_gr = perform_quick_fix("HCN+.s000.stat.h5","HCN+.s002.stat.h5",args.VMCwindowSize,args.DMCwindowSize)
+    r,fixed_gr = perform_quick_fix(args.VMC,args.DMC,args.VMCwindowSize,args.DMCwindowSize)
     start,end = get_start_and_end(fixed_gr,1e-2)
     coeff = fit_gaussian(r,fixed_gr,start,end)
     print "fix fit ", coeff[1]

@@ -116,6 +116,7 @@ if __name__=="__main__":
     normalize(x,dx,density)
     ax1.plot(x,density,label="1D Grid")
     ax1.plot(r, mix_fix.gaussian(r,*coeff), '--',label="non-adiabatic fit")
+    print coeff[1]
     #ax1.plot(r,fixed_gr,'--')
     ax1.set_ylabel(r'$\psi_o^*\psi_o$',fontsize=20)
     ax1.set_xlabel(r'$r_{CH} (\AA)$',fontsize=20)
@@ -123,8 +124,8 @@ if __name__=="__main__":
 
     # plot curve and fit
     ax2 = ax1.twinx()
-    ax2.plot(curveX,curveY,'o',markersize=2)
-    ax2.errorbar(curveX,curveY,yerr=curveYe,fmt=None,color='b')
+    #ax2.plot(curveX,curveY,'o',markersize=2)
+    #ax2.errorbar(curveX,curveY,yerr=curveYe,fmt=None,color='b')
     ax2.plot(x,V,'-r')
     ax2.set_ylabel('V (Hatree)',fontsize=16)
     for tl in ax2.get_yticklabels():
