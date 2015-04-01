@@ -48,16 +48,6 @@ def average(r,gr):
     return sum(r*gr)/sum(gr)
 # end def average
 
-def gaussian(x, *p):
-    A, mu, sigma = p
-    return A*np.exp(-(x-mu)**2/(2.*sigma**2))
-# end def gaussian
-def fit_gaussian(r,gr,start,end):
-    p0 = [1., average(r,gr) , 1.]
-    coeff, var_matrix = curve_fit(gaussian, r[start:end], gr[start:end], p0=p0)
-    return coeff
-# end def fit_gaussian
-
 def get_start_and_end(gr,thres):
     started = False
     start = 0
@@ -99,7 +89,8 @@ def quick_fix(vgr,dgr,eps):
     fixed_gr = []
     for i in range(len(vgr)):
         if vgr[i]>eps:
-            fixed_gr.append(dgr[i]*dgr[i]/vgr[i])
+            #fixed_gr.append(dgr[i]*dgr[i]/vgr[i])
+            fixed_gr.append(dgr[i]+dgr[i]-vgr[i])
         else:
             fixed_gr.append(dgr[i])
         # end if
@@ -119,7 +110,7 @@ def cut(r,f,r1,r2): # cut out a piece of f and pad with 0
     return cutgr
 # end def cut
 
-def perform_quick_fix(vmcfile,dmcfile,vw=4000,dw=500):
+def perform_quick_fix(vmcfile,dmcfile,vw=4000,dw=500,thres=1e-2):
     r,dr,VGR = gofrGrabber(vmcfile,'0','2')
     vgr = VGR[len(VGR)-vw:].mean(axis=0)
     normalize2PDF(r,dr,vgr)
@@ -127,14 +118,14 @@ def perform_quick_fix(vmcfile,dmcfile,vw=4000,dw=500):
     dgr = DGR[len(DGR)-dw:].mean(axis=0)
     normalize2PDF(r,dr,dgr)
     # ---- vgr,dgr now contain probability distributions
-
+    '''
     mean_vgr = []
     for i in range(0,len(vgr)-5,6):
         mean_vgr.append( sum(vgr[i:i+6])/6. )
     # end for i
     vgr = mean_vgr[:]
-
-    fixed_gr = quick_fix(vgr,dgr,1e-2)
+    '''
+    fixed_gr = quick_fix(vgr,dgr,thres)
     normalize2PDF(r,dr,fixed_gr)
     return r,fixed_gr
 # end def perform_quick_fix
@@ -144,25 +135,16 @@ if __name__=="__main__":
     parser.add_argument('VMC',type=str,help='h5 file containing VMC gofr')
     parser.add_argument('DMC',type=str,help='h5 file containing VMC gofr')
     parser.add_argument("-vw", "--VMCwindowSize", type=int, default=4000
-                        , help="size of time slice window in steps" )
+                        , help="number of data points to take from the end of VMC" )
     parser.add_argument("-dw", "--DMCwindowSize", type=int, default=500
-                        , help="size of time slice window in steps" )
+                        , help="number of data points to take from the end of DMC" )
+    parser.add_argument("-t", "--threshold", type=float, default=1e-2
+                        , help="threshold for small number, default 1e-2" )
     args = parser.parse_args()
 
-    '''
-    start,end = get_start_and_end(vgr,1e-3)
-    coeff = fit_gaussian(r,vgr,start,end)
-    print "VMC fit ", coeff[1]
-    start,end = get_start_and_end(dgr,1e-2)
-    coeff = fit_gaussian(r,dgr,start,end)
-    print "DMC fit ", coeff[1]
-    '''
-
     # quick fixed
-    r,fixed_gr = perform_quick_fix(args.VMC,args.DMC,args.VMCwindowSize,args.DMCwindowSize)
-    start,end = get_start_and_end(fixed_gr,1e-2)
-    coeff = fit_gaussian(r,fixed_gr,start,end)
-    print "fix fit ", coeff[1]
+    r,fixed_gr = perform_quick_fix(args.VMC,args.DMC,args.VMCwindowSize,args.DMCwindowSize,args.threshold)
+    start,end = get_start_and_end(fixed_gr,args.threshold)
     print "fix int ", sum(fixed_gr*r)/sum(fixed_gr)
    
     ar = np.array( fixed_gr )
@@ -170,7 +152,6 @@ if __name__=="__main__":
     ax = df.plot(title=r"Probability Distribution of $r_{CH}$")
     ax.set_xlabel(r"$r_{CH}$ (bohr)",fontsize=16)
     ax.set_ylabel("P(r)",fontsize=16)
-    plt.plot(r, gaussian(r,*coeff), label='Fitted data')
     
     plt.show()
 # end __main__
