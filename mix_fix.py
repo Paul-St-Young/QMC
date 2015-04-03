@@ -110,14 +110,7 @@ def cut(r,f,r1,r2): # cut out a piece of f and pad with 0
     return cutgr
 # end def cut
 
-def perform_quick_fix(vmcfile,dmcfile,vw=4000,dw=500,thres=1e-2):
-    r,dr,VGR = gofrGrabber(vmcfile,'0','2')
-    vgr = VGR[len(VGR)-vw:].mean(axis=0)
-    normalize2PDF(r,dr,vgr)
-    r,dr,DGR = gofrGrabber(dmcfile,'0','2')
-    dgr = DGR[len(DGR)-dw:].mean(axis=0)
-    normalize2PDF(r,dr,dgr)
-    # ---- vgr,dgr now contain probability distributions
+def perform_quick_fix(r,vgr,dgr,thres=1e-2):
     '''
     mean_vgr = []
     for i in range(0,len(vgr)-5,6):
@@ -129,6 +122,18 @@ def perform_quick_fix(vmcfile,dmcfile,vw=4000,dw=500,thres=1e-2):
     normalize2PDF(r,dr,fixed_gr)
     return r,fixed_gr
 # end def perform_quick_fix
+
+from scipy.interpolate import interp1d
+def spline_quick_fix(r,vgr,dgr,thres=1e-2):
+
+    newr=np.arange( r[0],r[-1],(r[-1]-r[0])/(10*len(r)) )
+    svgr=interp1d(r,vgr,kind='cubic')(newr)
+    sdgr=interp1d(r,dgr,kind='cubic')(newr)
+
+    fixed_gr = quick_fix(svgr,sdgr,thres)
+    normalize2PDF(newr,newr[1]-newr[0],fixed_gr)
+    return newr,svgr,sdgr,fixed_gr
+# end def spline_quick_fix
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description='Use g(r) to fix wf')
@@ -142,13 +147,23 @@ if __name__=="__main__":
                         , help="threshold for small number, default 1e-2" )
     args = parser.parse_args()
 
+    r,dr,VGR = gofrGrabber(args.VMC,'0','2')
+    vgr = VGR[len(VGR)-args.VMCwindowSize:].mean(axis=0)
+    normalize2PDF(r,dr,vgr)
+    r,dr,DGR = gofrGrabber(args.DMC,'0','2')
+    dgr = DGR[len(DGR)-args.DMCwindowSize:].mean(axis=0)
+    normalize2PDF(r,dr,dgr)
+    # ---- vgr,dgr now contain probability distributions
+
     # quick fixed
-    r,fixed_gr = perform_quick_fix(args.VMC,args.DMC,args.VMCwindowSize,args.DMCwindowSize,args.threshold)
-    start,end = get_start_and_end(fixed_gr,args.threshold)
+    r,fixed_gr = perform_quick_fix(r,vgr,dgr,args.threshold)
+    r,vgr,dgr,fixed_gr = spline_quick_fix(r,vgr,dgr,args.threshold)
     print "fix int ", sum(fixed_gr*r)/sum(fixed_gr)
+    print sum(vgr)
+    print sum(dgr)
    
-    ar = np.array( fixed_gr )
-    df = pandas.DataFrame(ar.T,index=r)
+    ar = np.array( [vgr,dgr,fixed_gr] )
+    df = pandas.DataFrame(ar.T,index=r,columns=["VMC","DMC","Fix"])
     ax = df.plot(title=r"Probability Distribution of $r_{CH}$")
     ax.set_xlabel(r"$r_{CH}$ (bohr)",fontsize=16)
     ax.set_ylabel("P(r)",fontsize=16)
