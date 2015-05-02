@@ -1,7 +1,7 @@
   <!-- VMC -->
   <qmc method="vmc" move="pbyp" checkpoint="-1">
-    <parameter name="steps">		1000	</parameter>
-    <parameter name="samples">		12800	</parameter>
+    <parameter name="steps">            400 </parameter>
+    <parameter name="samplesperthread"> 4   </parameter>
 
     <parameter name="blocks">		400	</parameter>
     <parameter name="warmupSteps">	100	</parameter>
@@ -11,25 +11,7 @@
 
   <!-- DMC -->
   <qmc method="dmc" move="pbyp" checkpoint="-1">
-    <parameter name="targetWalkers">	12800	</parameter>
-    <parameter name="timestep">		0.01	</parameter>
-    <parameter name="blocks">		100	</parameter>
-    <parameter name="steps">		100	</parameter>
+    <parameter name="timestep">     0.01    </parameter>
+    <parameter name="blocks">       100     </parameter>
+    <parameter name="steps">        100     </parameter>
   </qmc>
-
-  <!-- DMC -->
-  <qmc method="dmc" move="pbyp" checkpoint="-1">
-    <parameter name="targetWalkers">    12800  </parameter>
-    <parameter name="timestep">         0.005   </parameter>
-    <parameter name="blocks">           200     </parameter>
-    <parameter name="steps">            100      </parameter>
-  </qmc>
-
-  <!-- DMC -->
-  <qmc method="dmc" move="pbyp" checkpoint="10">
-    <parameter name="targetWalkers">    12800  </parameter>
-    <parameter name="timestep">         0.001   </parameter>
-    <parameter name="blocks">           1000     </parameter>
-    <parameter name="steps">            1000      </parameter>
-  </qmc>
-

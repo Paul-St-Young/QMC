@@ -1,14 +1,14 @@
 <loop max="5">
   <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
-    <parameter name="samples">		96000		</parameter>
-    <parameter name="substeps">		40		</parameter>
-    <parameter name="timestep">		0.1		</parameter>
+    <parameter name="samples">      96000   </parameter>
+    <parameter name="substeps">     40      </parameter>
+    <parameter name="timestep">     0.1     </parameter>
 
-    <parameter name="blocks">		100		</parameter>
-    <parameter name="steps">		1		</parameter>
-    <parameter name="warmupsteps">	100		</parameter>
-    <cost name="energy">		0.5		</cost>
-    <cost name="unreweightedvariance">	0.0		</cost>
-    <cost name="reweightedvariance">	0.5		</cost>
+    <parameter name="blocks">       100     </parameter>
+    <parameter name="steps">        1       </parameter>
+    <parameter name="warmupsteps">  100     </parameter>
+    <cost name="energy">                0.5     </cost>
+    <cost name="unreweightedvariance">  0.0     </cost>
+    <cost name="reweightedvariance">    0.5     </cost>
   </qmc>
 </loop>

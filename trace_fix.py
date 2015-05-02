@@ -45,7 +45,9 @@ if __name__=="__main__":
         fixed=[ dmc[i]/vmc[i]*dmc[i] for i in range(len(rf)) ]
         idx.append(endIdx)
         peak_trace.append(sum(fixed*rf)/sum(fixed))
-        #peak_trace.append(sum(gr*r)/sum(gr))
+        vm = sum(vmc*rf)/sum(vmc)
+        dm = sum(dmc*rf)/sum(dmc)
+        #peak_trace.append(dm*dm/vm)
     # end for i
     peak_trace.reverse()
     idx.reverse()

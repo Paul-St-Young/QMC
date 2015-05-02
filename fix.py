@@ -40,6 +40,8 @@ if __name__=="__main__":
                         , help="by what factor to corasen VMC data" )
     parser.add_argument("-cd", "--coarsenDMC", type=int, default=1
                         , help="by what factor to corasen DMC data" )
+    parser.add_argument("-f", "--fix", action='store_true'
+                        , help="just plot fix factor" )
     args = parser.parse_args()
     
     r,vmc= np.loadtxt(args.VMC).T
@@ -55,11 +57,23 @@ if __name__=="__main__":
     vmc=interp1d(newrv,newvmc,kind='cubic')(r)
     dmc=interp1d(newrd,newdmc,kind='cubic')(r)
     fixed=[ dmc[i]/vmc[i]*dmc[i] for i in range(len(r)) ]
+    fix_factor=[ dmc[i]/vmc[i] for i in range(len(r)) ]
+    vm = sum(vmc*r)/sum(vmc)
+    dm = sum(dmc*r)/sum(dmc)
+    print "VMC = ", vm
+    print "DMC = ", dm
     print "Ro = ",sum(fixed*r)/sum(fixed)
+    print "Mean Fix = ", dm*dm/vm
     
     plt.plot(r,vmc,'--',label="VMC")
+    plt.plot(newrv,newvmc,'^',label="VMC data")
     plt.plot(r,dmc,'-.',label="DMC")
-    plt.plot(r,fixed,label="Fix")
+    plt.plot(newrd,newdmc,'o',label="DMC data")
+    if (args.fix):
+        plt.plot(r,np.log(fix_factor),label="Fix Factor")
+    else:
+        plt.plot(r,fixed,label="Fix")
+    # end if fix_factor
     plt.legend(loc=0)
     plt.show()
 
