@@ -302,7 +302,7 @@ class MrData:
 		print("Check progress in "+qmcblock+".out")
 		os.system("export OMP_NUM_THREADS=1")
 		with open(qmcblock+".out",'w') as outfile:
-			subprocess.call(["qmcapp",qmcblock+".xml"],stdout=outfile)
+			subprocess.call(["qmcapp",qmcblock+".xml"],stdout=outfile,stderr=outfile)
 			
 		# modify the wavefunction
 		self.addOption2QMCline(self.wfs,"name=\"spo-up\""," cuspInfo=\"spo-up.cuspInfo.xml\">\n")
@@ -310,7 +310,7 @@ class MrData:
 		self.add_QMCblock_before(self.wfs,"</wavefunction>","jastrow.xml")
 		
 		# folder management
-		os.system("mkdir cusp;mv newOrbs* *.xml wftest.000 eloc.dat *.out cusp")
+		os.system("mkdir cusp;mv newOrbs* *.xml *.out cusp")
 	
 	def vmc(self,tag):
 		vmc_dir="vmc"+tag
