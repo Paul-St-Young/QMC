@@ -5,6 +5,7 @@
 import numpy as np
 
 def getGroundState(x,V):
+    # using Hartree atomic units x MUST be in Bohr and V MUST be in Hatree
     dx = x[1]-x[0]
     # set up Hamiltonian
     m = 1822.88839
@@ -57,14 +58,15 @@ if __name__=="__main__":
     
     # calculate Re, Ro
     print "Re =", round( x[list(V(x)).index(V(x).min())] ,4), " by fit min"
-    print "Ro =", round( sum(density*x*(x[1]-x[0]))/sum(density*(x[1]-x[0])) ,4), " by integrate"
+    print "Ro =", round( sum(density*x)/sum(density) ,4), " by integrate"
     
     fig, ax1 = plt.subplots()
+
     
     # plot density
     ax1.plot(x,density,label="1D Grid")
     ax1.set_ylabel(r'$\psi_o^*\psi_o$',fontsize=16)
-    ax1.set_xlabel(r'$r_{CH} (\AA)$',fontsize=16)
+    ax1.set_xlabel(r'$r_{CH} (Bohr)$',fontsize=16)
     ax1.legend(loc=0)
     
     # plot curve
