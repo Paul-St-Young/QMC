@@ -42,6 +42,8 @@ if __name__=="__main__":
     
     # get cold curve
     X, Y, Ye = np.loadtxt(args.coldFile).T
+    #atob=1.889725989
+    #X *= atob
     V = np.poly1d( np.polyfit(X,Y,args.order) )
     
     # get ground state proton density on fitted cold curve with fine grid

@@ -217,7 +217,7 @@ class MrData:
 		print("Converting GAMESS output to QMCPACK input")
 		with open(self.convert_out,"w") as outfile:
 			#subprocess.call(["convert4qmc","-gamessAscii",self.reout,"-ci",self.reout,"-readInitialGuess",str(self.countNORB("gamess/"+self.molecule+".dat")),"-threshold","0.0001","-add3BodyJ"],stdout=outfile)
-			subprocess.call(["convert4qmc","-gamessAscii",self.reout,"-ci",self.reout,"-threshold","0.0001","-add3BodyJ"],stdout=outfile)
+			subprocess.call(["convert4qmc","-gamessAscii",self.reout,"-ci",self.reout,"-threshold","0.001","-add3BodyJ"],stdout=outfile)
 	
 		# folder management
 		# ====
