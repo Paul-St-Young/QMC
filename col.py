@@ -52,7 +52,8 @@ if __name__=="__main__":
     # read data
     data = np.loadtxt(args.scalar).T
     data = data[args.column,args.equil:]
-    print tokens[args.column],data.mean(),"+-",data.std()/(len(data)/corr(data))
+    correlation=corr(data)
+    print tokens[args.column],data.mean(),"+-",data.std()/np.sqrt(len(data)/correlation),correlation
     # plot
     plt.plot(data)
     plt.show()
