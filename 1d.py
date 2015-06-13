@@ -8,7 +8,8 @@ def getGroundState(x,V):
     # using Hartree atomic units x MUST be in Bohr and V MUST be in Hatree
     dx = x[1]-x[0]
     # set up Hamiltonian
-    m = 1822.88839
+    #m = 1822.88839
+    m=1836
     t = 1./(2*m*dx**2)
     Hdiag = V+2*t*np.ones(len(x))
     Hoffd = -t*np.ones(len(x)-1)
@@ -21,6 +22,14 @@ def getGroundState(x,V):
     
     return w[minIdx], psi
 # end def getGroundState
+
+from scipy.optimize import curve_fit
+def gaus(x,A,x0,alpha):
+    return A*np.exp(-alpha*(x-x0)**2)
+def fitGaussian(x,y):
+    popt,pcov = curve_fit(gaus,x,y,p0=[max(y),x[list(y).index(max(y))],20.0])
+    return popt
+# end def fitGaussian
 
 import matplotlib.pyplot as plt
 import argparse
@@ -62,14 +71,20 @@ if __name__=="__main__":
     print "Re =", round( x[list(V(x)).index(V(x).min())] ,4), " by fit min"
     print "Ro =", round( sum(density*x)/sum(density) ,4), " by integrate"
     
+    popt = fitGaussian(x,density)
+    alpha= popt[2]
+    print "alpha=",alpha
+    
     fig, ax1 = plt.subplots()
-
     
     # plot density
     ax1.plot(x,density,label="1D Grid")
     ax1.set_ylabel(r'$\psi_o^*\psi_o$',fontsize=16)
     ax1.set_xlabel(r'$r_{CH} (Bohr)$',fontsize=16)
     ax1.legend(loc=0)
+
+    # plot fit
+    ax1.plot(x,gaus(x,*popt),label='fit')
     
     # plot curve
     ax2 = ax1.twinx()
