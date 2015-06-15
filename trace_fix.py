@@ -26,8 +26,8 @@ if __name__=="__main__":
     args = parser.parse_args()
 
     mol = args.VMC.split(".")[0] # name of molecule
-    r,GR = grabGR(args.DMC,'0','2')
-    r,GRV= grabGR(args.VMC,'0','2')
+    r,GR = grabGR(args.DMC,'0','1')
+    r,GRV= grabGR(args.VMC,'0','1')
     grv=GRV[len(GRV)-args.VMCData:].mean(axis=0)
     normalize2PDF(r,grv)
     # ---- grv now contain probability distributions

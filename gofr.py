@@ -49,7 +49,7 @@ if __name__=="__main__":
     parser.add_argument("-w", "--windowSize", type=int, default=1000, help="size of time slice window in steps" )
     parser.add_argument("-d","--dump", action='store_true', help="dump last time")
     parser.add_argument("-myi","--myi", type=str, help="gofr_ion0_myi_myj", default='0')
-    parser.add_argument("-myj","--myj", type=str, help="gofr_ion0_myi_myj", default='2')
+    parser.add_argument("-myj","--myj", type=str, help="gofr_ion0_myi_myj", default='1')
     args = parser.parse_args()
 
     mol = args.h5file.split(".")[0] # name of molecule
