@@ -8,8 +8,7 @@ def getGroundState(x,V):
     # using Hartree atomic units x MUST be in Bohr and V MUST be in Hatree
     dx = x[1]-x[0]
     # set up Hamiltonian
-    #m = 1822.88839
-    m=1836
+    m = 1836.
     t = 1./(2*m*dx**2)
     Hdiag = V+2*t*np.ones(len(x))
     Hoffd = -t*np.ones(len(x)-1)
@@ -39,7 +38,7 @@ if __name__=="__main__":
         description='Solve for ground state proton density on given cold curve')
     parser.add_argument('coldFile',type=str
         ,help='File containing cold curve in x:y:yerr format')
-    parser.add_argument('-n','--npoints',type=int,default=100
+    parser.add_argument('-n','--npoints',type=int,default=1024
         ,help='Number of grid points for finite difference')
     parser.add_argument('-o','--order',type=int,default=5
         ,help='Order of polynomial in fit')
@@ -54,6 +53,7 @@ if __name__=="__main__":
     #atob=1.889725989
     #X *= atob
     V = np.poly1d( np.polyfit(X,Y,args.order) )
+    print np.polyfit(X,Y,args.order)
     
     # get ground state proton density on fitted cold curve with fine grid
     xmin, xmax = args.xmin, args.xmax
@@ -65,8 +65,9 @@ if __name__=="__main__":
     # end if xmax
     x=np.arange(xmin,xmax,(xmax-xmin)/args.npoints)
     E,psi = getGroundState(x,V(x))
+    print "Energy E=",E
+
     density = psi*psi
-    
     # calculate Re, Ro
     print "Re =", round( x[list(V(x)).index(V(x).min())] ,4), " by fit min"
     print "Ro =", round( sum(density*x)/sum(density) ,4), " by integrate"
