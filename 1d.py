@@ -8,7 +8,8 @@ def getGroundState(x,V):
     # using Hartree atomic units x MUST be in Bohr and V MUST be in Hatree
     dx = x[1]-x[0]
     # set up Hamiltonian
-    m = 1836.
+    #m = 1836.
+    m = 1836.*12*1836/(13*1836)
     t = 1./(2*m*dx**2)
     Hdiag = V+2*t*np.ones(len(x))
     Hoffd = -t*np.ones(len(x)-1)
@@ -53,7 +54,6 @@ if __name__=="__main__":
     #atob=1.889725989
     #X *= atob
     V = np.poly1d( np.polyfit(X,Y,args.order) )
-    print np.polyfit(X,Y,args.order)
     
     # get ground state proton density on fitted cold curve with fine grid
     xmin, xmax = args.xmin, args.xmax
