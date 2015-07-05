@@ -2,6 +2,15 @@
 import numpy as np
 import h5py
 
+def reblock(data,block):
+    n=int(np.floor(float(len(data))/block))
+    newdata=[]
+    for i in range(n):
+        newdata.append(data[i*block:(i+1)*block].mean())
+    # end for i
+    return np.array(newdata)
+# end def reblock
+
 def corr(myg):
     # autocorrelation
     g = np.array(myg)
@@ -38,9 +47,10 @@ if __name__=="__main__":
     parser.add_argument("scalar", type=str, help="scalar file name")
     parser.add_argument('-e','--equil', type=int, default=0, help="number of equilibration steps")
     parser.add_argument('-c','--column', type=int, default=0, help="column to analyze")
+    parser.add_argument('-rb','--reblock', type=int, default=1, help="reblock data")
     args = parser.parse_args()
     
-    # list options
+    # if no column specified, list options
     with open(args.scalar) as f:
         headline = f.readline()
         tokens = headline.strip('#').split()
@@ -52,6 +62,9 @@ if __name__=="__main__":
     # read data
     data = np.loadtxt(args.scalar).T
     data = data[args.column,args.equil:]
+
+    data = reblock(data,args.reblock)
+
     correlation=corr(data)
     print tokens[args.column],data.mean(),"+-",data.std()/np.sqrt(len(data)/correlation),correlation
     # plot
