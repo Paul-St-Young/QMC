@@ -48,27 +48,45 @@ if __name__=="__main__":
     parser.add_argument('-e','--equil', type=int, default=0, help="number of equilibration steps")
     parser.add_argument('-c','--column', type=int, default=0, help="column to analyze")
     parser.add_argument('-rb','--reblock', type=int, default=1, help="reblock data")
+    parser.add_argument('-p','--plot', action='store_true', help="plot data")
+    parser.add_argument('-d','--dump', action='store_true', help="dump data")
     args = parser.parse_args()
     
-    # if no column specified, list options
-    with open(args.scalar) as f:
-        headline = f.readline()
-        tokens = headline.strip('#').split()
-    # end with open
-    if (args.column==0):
-        print np.array( [range(len(tokens)),tokens] ).T
-    # end if args.column==0
   
     # read data
     data = np.loadtxt(args.scalar).T
-    data = data[args.column,args.equil:]
+
+    if not isinstance(data[0], (float,int,long,complex)):
+        # if no column specified, list options
+        with open(args.scalar) as f:
+            headline = f.readline()
+            tokens = headline.strip('#').split()
+        # end with open
+        if (args.column==0):
+            print np.array( [range(len(tokens)),tokens] ).T
+        # end if args.column==0
+        data = data[args.column,args.equil:]
+    else:
+        data = data[args.equil:]
+    # if len(data)!=1
 
     data = reblock(data,args.reblock)
-
     correlation=corr(data)
-    print tokens[args.column],data.mean(),"+-",data.std()/np.sqrt(len(data)/correlation),correlation
+
+    if not isinstance(data[0], (float,int,long,complex)):
+        print(tokens[args.column]),
+    # end if not isinstance
+    print data.mean(),"+-",data.std()/np.sqrt(len(data)/correlation),correlation
+
     # plot
-    plt.plot(data)
-    plt.show()
+    if args.plot:
+        plt.plot(data)
+        plt.show()
+    # end if
+
+    # dump
+    if args.dump:
+        np.savetxt("data.dat",data)
+    # end if dump
 
 # end __main__
