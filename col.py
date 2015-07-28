@@ -38,6 +38,10 @@ def corr(myg):
     return 1+2.*sumR
 #end def corr
 
+def error(data):
+    return data.std()/np.sqrt(len(data)/corr(data))
+# end def error
+
 import matplotlib.pyplot as plt
 import argparse
 from scipy import stats
