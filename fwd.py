@@ -14,8 +14,12 @@ if __name__=="__main__":
         , help="number of equilibration blocks")
     parser.add_argument('-s','--start', type=int, default=10
         , help="first column that contains forwadwalking data")
-    parser.add_argument('-n','--number', type=int, default=20
-        , help="number of forwad walking data")
+    parser.add_argument('-n','--number', type=int, default=10
+        , help="number of forwad walking data points")
+    parser.add_argument('-b','--best', type=int, default=7
+        , help="best data point")
+    parser.add_argument('-p','--plot', action='store_true'
+        , help="plot convergence")
     #parser.add_argument('-d','--dump', action='store_true'
         #, help="dump test data")
     args = parser.parse_args()
@@ -25,9 +29,10 @@ if __name__=="__main__":
 
     # process best value
     datStart = args.start
+    best     = args.best
     datMax   = args.number
-    print "after",args.equil,"blocks of equilibration, the data has length", len(data[datStart,args.equil:])
-    dat = data[datStart+datMax-1,args.equil:]
+    #print "after",args.equil,"blocks of equilibration, the data has length", len(data[datStart,args.equil:])
+    dat = data[datStart+best-1,args.equil:]
     print dat.mean(),"+-",error(dat)
 
     """
@@ -54,10 +59,13 @@ if __name__=="__main__":
         V.append( curdat.mean() )
         Ve.append( error(curdat) )
     # end for i
-    fig,ax=plt.subplots()
-    ax.plot(V,'-x')
-    ax.errorbar(X,V,yerr=Ve,fmt=None,color='b')
-    plt.show() 
+
+    if args.plot:
+        fig,ax=plt.subplots()
+        ax.plot(V,'-x')
+        ax.errorbar(X,V,yerr=Ve,fmt=None,color='b')
+        plt.show() 
+    # end if plot
 
     """
     dat = data[27,args.equil:]
