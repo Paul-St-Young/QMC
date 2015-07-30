@@ -1,6 +1,20 @@
 #!/usr/bin/env python
 import numpy as np
 
+def fwd(scalarfile,fwdStart,fwdNumber,equil):
+    data = np.loadtxt(scalarfile).T
+    X=[]
+    V=[]
+    Ve=[]
+    for i in range(fwdNumber):
+        X.append(i)
+        curdat = data[fwdStart+i,equil:]
+        V.append( curdat.mean() )
+        Ve.append( error(curdat) )
+    # end for i
+    return X,V,Ve
+# end def fwd
+
 from col import error
 import matplotlib.pyplot as plt
 import argparse
@@ -16,7 +30,7 @@ if __name__=="__main__":
         , help="first column that contains forwadwalking data")
     parser.add_argument('-n','--number', type=int, default=10
         , help="number of forwad walking data points")
-    parser.add_argument('-b','--best', type=int, default=7
+    parser.add_argument('-b','--best', type=int, default=6
         , help="best data point")
     parser.add_argument('-p','--plot', action='store_true'
         , help="plot convergence")
@@ -25,41 +39,12 @@ if __name__=="__main__":
     args = parser.parse_args()
   
     # read data 
-    data = np.loadtxt(args.scalarfile).T
+    X,V,Ve = fwd(args.scalarfile,args.start,args.number,args.equil)
 
     # process best value
-    datStart = args.start
-    best     = args.best
-    datMax   = args.number
-    #print "after",args.equil,"blocks of equilibration, the data has length", len(data[datStart,args.equil:])
-    dat = data[datStart+best-1,args.equil:]
-    print dat.mean(),"+-",error(dat)
-
-    """
-    testdat = data[9,args.equil:]
-    print testdat.mean(),"+-",stats.sem(testdat)
-    if (args.dump):
-        with open("dist.dat",'w') as f:
-            for i in range(len(testdat)):
-                f.write( str(testdat[i])+"\n" )
-            # end for i
-        # end with open
-    # end if dump
-    plt.plot(testdat,'-')
-    plt.show()
-    """
+    print V[args.best],"+-",Ve[args.best]
 
     # plot
-    X=[]
-    V=[]
-    Ve=[]
-    for i in range(datMax):
-        X.append(i)
-        curdat = data[datStart+i,args.equil:]
-        V.append( curdat.mean() )
-        Ve.append( error(curdat) )
-    # end for i
-
     if args.plot:
         fig,ax=plt.subplots()
         ax.plot(V,'-x')
@@ -67,9 +52,4 @@ if __name__=="__main__":
         plt.show() 
     # end if plot
 
-    """
-    dat = data[27,args.equil:]
-    plt.plot(dat)
-    plt.show()
-    """
 # end __main__
