@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+# !!!!!!!! density.out is wrong !!!!
+# data extraction is correct, but the assignment of each
+# data point to x,y,z location is wrong
+# avgdens[x][y][z] is correct but x,y,z run backwards
 
 import h5py
 import numpy as np

@@ -69,7 +69,6 @@ if __name__=="__main__":
         normalize2PDF(r,sGR[i])
     # end for i
     # ---- sGR now contain probability distributions
-    print sum(r*sGR[-1])/sum(sGR[-1])
     if args.dump:
         with open('gr.dat','w') as f:
             for i in range(len(r)):

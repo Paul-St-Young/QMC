@@ -1,13 +1,16 @@
 <!-- 1. Samples needed \approx (# of free parameters)^2, reasonable to have 1000 samples/process -->
-<!--   this input is intended for Taub with 4 nodes (64 processes), and can handle about 250 dets+123jastrows -->
+<!--   this input is intended for Titan with 20 nodes (3200 processes), and can handle about 4500 dets+123jastrows -->
 <!-- 2. To decorrelate samples, set substeps*timestep >= 5a.u. -->
-<!-- 3. # of block will be determined by samples and # of processes (1500 for 64 processes on Taub) -->
-<!-- 4. steps will default to 1, correlation is removed by substeps -->
+<!-- 3. steps will default to 1, correlation is removed by substeps -->
+
 <loop max="5">
   <qmc method="linear" move="pbyp" checkpoint="-1" gpu="no">
-    <parameter name="samples">      96000   </parameter>
+    <parameter name="samples">      320000  </parameter>
     <parameter name="substeps">     50      </parameter>
     <parameter name="timestep">     0.1     </parameter>
+
+    <parameter name="blocks">       100     </parameter>
+    <parameter name="warmupsteps">  100     </parameter>
 
     <cost name="energy">                0.5     </cost>
     <cost name="unreweightedvariance">  0.0     </cost>
