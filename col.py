@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import numpy as np
-import h5py
 
 def reblock(data,block):
     n=int(np.floor(float(len(data))/block))
@@ -42,7 +41,6 @@ def error(data):
     return data.std()/np.sqrt(len(data)/corr(data))
 # end def error
 
-import matplotlib.pyplot as plt
 import argparse
 from scipy import stats
 if __name__=="__main__":
@@ -55,7 +53,6 @@ if __name__=="__main__":
     parser.add_argument('-p','--plot', action='store_true', help="plot data")
     parser.add_argument('-d','--dump', action='store_true', help="dump data")
     args = parser.parse_args()
-    
   
     # read data
     data = np.loadtxt(args.scalar).T
@@ -84,6 +81,7 @@ if __name__=="__main__":
 
     # plot
     if args.plot:
+        import matplotlib.pyplot as plt
         plt.plot(data)
         plt.show()
     # end if
