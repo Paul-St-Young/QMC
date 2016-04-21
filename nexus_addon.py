@@ -1,4 +1,4 @@
-def qmca_ev_parser(qmca_output):
+def qmca_ev_parse(qmca_output):
     # parse output from command:
     #  qmca -q ev $scalar_file
     evline=qmca_output[1].split()
@@ -7,7 +7,7 @@ def qmca_ev_parser(qmca_output):
     v=float(evline[6])
     ve=float(evline[8])
     return e,ee,v,ve
-# end def qmca_ev_parser 
+# end def qmca_ev_parse
 
 from fileio import TextFile
 
@@ -19,6 +19,9 @@ class MyTextFile(TextFile):
         trailer_pos = self.mm.find(trailer)
         
         block = self.mm[header_pos:trailer_pos]
+        if header_pos >= trailer_pos:
+            print "header {:d} appears after trailer {:d}".format(header_pos,trailer_pos)
+        # end if
         
         trim_head_tail = "\n".join( block.split("\n")[1:-2] )
         return trim_head_tail.strip("\n")

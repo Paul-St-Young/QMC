@@ -12,6 +12,9 @@ apt-get install python-numpy python-matplotlib
 # for GAMESS
 apt-get install libatlas-base-dev
 
+# system monitoring
+apt-get install lm-sensors
+
 # ===================== .BASHRC ===================== #
 # back up .bashrc
 RC=~/.bashrc
