@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 class scalar_analyzer:
     # a collection of useful functions for analyzing a trace file
@@ -41,6 +42,26 @@ class scalar_analyzer:
         # return DataFrame object
         return df
     # end def energy_components
+    
+    def plot_components(self,components,df):
+        # plot components from a data frame together
+
+        fig = plt.figure()
+        ax  = fig.add_subplot(111)
+
+        for component in components:
+            if component not in df.columns:
+                print component + " is not in the DataFrame with columns:"
+                print df.columns.values
+                return
+            # end if
+            ax.plot(df[component],label=component)
+        # end for
+
+        ax.legend()
+        fig.tight_layout()
+        return fig,ax
+    # end def plot_components
 
     def corr(self,myg):
         # calculate autocorrelation of a trace myg

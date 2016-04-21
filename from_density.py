@@ -25,7 +25,7 @@ def grab_density_parameters(qmc_input_xml):
     return x,y,z
 # end def grab_density_parameters
 
-def grabDensity(h5file):
+def grab_density(h5file):
     # get density
     f = h5py.File(h5file)
     for name,quantity in f.items():
@@ -36,7 +36,7 @@ def grabDensity(h5file):
     f.close()
 
     return density
-# end def grabDensity
+# end def grab_density
 
 def a2w(alpha):
     return 1./np.sqrt(2.*alpha)
