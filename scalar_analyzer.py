@@ -90,4 +90,8 @@ class scalar_analyzer:
         return 1+2.*sumR
     #end def corr
 
+    def error(self,trace):
+        return trace.std()/np.sqrt( len(trace)/self.corr(trace) )
+    # end def error
+
 # end class scalar_analyzer
