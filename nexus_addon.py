@@ -1,14 +1,3 @@
-def qmca_ev_parse(qmca_output):
-    # parse output from command:
-    #  qmca -q ev $scalar_file
-    evline=qmca_output[1].split()
-    e=float(evline[3])
-    ee=float(evline[5])
-    v=float(evline[6])
-    ve=float(evline[8])
-    return e,ee,v,ve
-# end def qmca_ev_parse
-
 from fileio import TextFile
 
 # extend MyTextFile to recognize block pattern
@@ -67,3 +56,48 @@ def scalar_rename(name):
     
     return new_name
 # end def
+
+import os
+import pandas as pd
+from nexus import QmcpackAnalyzer
+def qmcpack_scalars(qmc_inputs,img_name = "image.p",save_image=True
+    # default inputs to extract_scalar
+    ,extract_names   = ["LocalEnergy","LocalEnergyVariance"]
+    ,extract_attribs = ["mean","error"]):
+    
+    """ pull out useful scalar outputs from QMCPACK runs.
+    qmc_inputs: a list of locations of QMCPACK inputs
+    return: a database containing basic scalar data
+    
+    save an image of the analyzer in the raw data directory to save time if a second pass is needed.
+    """
+    
+    data = []
+    for qmc_input in qmc_inputs:
+
+        # initialize an analyzer
+        qa = QmcpackAnalyzer(qmc_input)
+        
+        # find the folder containing the input file
+        path = "/".join( qmc_input.split("/")[:-1] )
+        if os.path.isfile(path+"/"+img_name):
+            qa.load(path+"/"+img_name)
+        else:
+            qa.analyze()
+            if save_image:
+                qa.save(path+"/"+img_name)
+            # end if save_image
+        # end if
+
+        # loop through all runs in the <qmc="blah"/> sections
+        for iqmc in qa.qmc.keys():
+            entry = extract_scalar(qa.qmc[iqmc])
+            entry["iqmc"] = iqmc
+            entry["path"] = path
+            data.append(entry)
+        # end for iqmc
+    # end for qmc_input
+    df = pd.DataFrame.from_dict(data)
+    
+    return df
+# end def 
