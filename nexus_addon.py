@@ -95,7 +95,7 @@ def qmcpack_scalars(qmc_inputs,img_name = "image.p",save_image=True
     ,extract_names   = ["LocalEnergy","LocalEnergyVariance"],extract_all=False
     ,extract_attribs = ["mean","error"],warn=True):
     
-    """ build on extract_scalar, pull out useful scalar outputs from QMCPACK run folder
+    """ build on extract_scalar, pull out useful scalar outputs from a list of QMCPACK inputs
     qmc_inputs: a list of locations of QMCPACK inputs
     return: a database containing basic scalar data
     
@@ -112,8 +112,8 @@ def qmcpack_scalars(qmc_inputs,img_name = "image.p",save_image=True
         qa = QmcpackAnalyzer(qmc_input)
         
         # find the folder containing the input file
-        path = "/".join( qmc_input.split("/")[:-1] )
-        input_name = "/".join( qmc_input.split("/")[-1] )
+        path = "/".join( qmc_input.split("/")[:-1] ) + "/"
+        input_name = qmc_input.split("/")[-1]
         if os.path.isfile(path+"/"+img_name):
             qa.load(path+"/"+img_name)
         else:
