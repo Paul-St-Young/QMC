@@ -88,7 +88,6 @@ def scalar_rename(name):
 # end def
 
 import os
-import pandas as pd
 from nexus import QmcpackAnalyzer
 def qmcpack_scalars(qmc_inputs,img_name = "image.p",save_image=True
     # default inputs to extract_scalar
@@ -110,6 +109,17 @@ def qmcpack_scalars(qmc_inputs,img_name = "image.p",save_image=True
 
         # initialize an analyzer
         qa = QmcpackAnalyzer(qmc_input)
+
+        # extract some input data
+        qi = qa.info.input
+        calculations = []
+        for key in qi.simulation.keys():
+            if key=="calculations":
+                calculations = qi.simulation[key].to_dict()
+            elif key=="qmc":
+                calculations = qi.simulation[key].to_dict()
+            # end if
+        # end for
         
         # find the folder containing the input file
         path = "/".join( qmc_input.split("/")[:-1] ) + "/"
@@ -128,12 +138,14 @@ def qmcpack_scalars(qmc_inputs,img_name = "image.p",save_image=True
             entry = extract_scalar(qa.qmc[iqmc], extract_names=extract_names
                     ,extract_all=extract_all, warn=False)
             entry["iqmc"] = iqmc
+            if calculations != []:
+                entry["settings"] = calculations[iqmc]
+            # end if
             entry["path"] = path
             entry["input_name"] = input_name
             data.append(entry)
         # end for iqmc
     # end for qmc_input
-    df = pd.DataFrame.from_dict(data)
     
-    return df
+    return data
 # end def 
