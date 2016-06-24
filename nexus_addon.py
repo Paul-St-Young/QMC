@@ -25,6 +25,12 @@ def extract_scalar( qmc_run
 
     entry = {}
 
+    try:
+        qmc_run.scalars
+    except:
+        return entry
+    # end try
+
     if extract_all:
         for name in qmc_run.scalars.keys():
             if name not in entry.keys():
@@ -149,3 +155,33 @@ def qmcpack_scalars(qmc_inputs,img_name = "image.p",save_image=True
     
     return data
 # end def 
+
+from nexus import GamessAnalyzer
+
+def collect_gamess_from_inputs(inputs):
+    data = []
+    for gamess_input in inputs:
+        
+        # analyze run
+        ga = GamessAnalyzer(gamess_input)
+        ga.analyze()
+        
+        # initialize entry
+        entry = {"path":gamess_input}
+        
+        # record inputs
+        input_essentials = set(["system","contrl","basis","det","data"])
+        for key in ga.info.input.keys():
+            if key in input_essentials:
+                entry.update( ga.info.input[key].to_dict() )
+            # end if
+        # end for
+        
+        # record energies
+        entry.update( ga.energy.to_dict() )
+        
+        # save entry
+        data.append(entry)
+    # end for
+    return data
+# end def collect_gamess_from_inputs
