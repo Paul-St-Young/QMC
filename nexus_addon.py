@@ -185,3 +185,47 @@ def collect_gamess_from_inputs(inputs):
     # end for
     return data
 # end def collect_gamess_from_inputs
+
+from nexus import QmcpackInput
+import numpy as np
+def get_jastrow_list(qmcpack_input,one_body=True,two_body=True,just_wf=False):
+    
+    def two_body_jastrow(correlation):
+        x = np.linspace(0,correlation.rcut,correlation.size)
+        y = correlation.coefficients.coeff
+        return x,y
+    # end def
+    
+    qi = QmcpackInput(qmcpack_input)
+    if just_wf:
+        # if qmcpack_input is an output of optimization (prefix.opt.xml)
+        jastrows = qi.qmcsystem.wavefunction.jastrows
+    else:
+        jastrows = qi.simulation.qmcsystem.wavefunction.jastrows
+    # end if
+    
+    jastrow_list = []
+    if one_body:
+        for name in jastrows.J1.correlations.keys():
+            qij1 = jastrows.J1.correlations[name]
+            x,y  = two_body_jastrow( qij1 )
+            entry = {"name":name,"x":x,"y":y
+                     ,"type":"one-body"
+                     ,"path":qmcpack_input}
+            jastrow_list.append(entry)
+        # end for name
+    # end if
+
+    if two_body:
+        for name in jastrows.J2.correlations.keys():
+            qij2 = jastrows.J2.correlations[name]
+            x,y  = two_body_jastrow( qij2 )
+            entry = {"name":name,"x":x,"y":y
+                     ,"type":"two-body"
+                     ,"path":qmcpack_input}
+            jastrow_list.append(entry)
+        # end for name
+    # end if
+    
+    return jastrow_list
+# end def 
