@@ -41,8 +41,8 @@ def kint_to_kvec(kint,nk,alat):
 
 def get_3d_kgrid(fk,alat,nk,exclude_gamma=False):
     """ put a k-space function fk onto an FFT grid for inverse Fourier transform
-     fr = np.fft.ifft(fk)*nk**3 ! Don't forget the nk^3 normalization! """
-    kgrid = np.zeros([nk,nk,nk])
+     fr = np.fft.ifft(fk)*(alat/nk)**ndim ! Don't forget the normalization! """
+    kgrid = np.zeros([nk,nk,nk],dtype=complex)
     kint_unit = lambda x:kint_to_kvec(x,nk,alat)
     for kx in range(nk):
         for ky in range(nk):
@@ -76,3 +76,14 @@ def inv_fft(kgrid,alat):
     return x,fr
 # end def
 
+def fft(fr,alat):
+
+    # !!! assume isotropic uniform cubic grid
+    ndim = len(fr.shape)
+    nk   = fr.shape[0]
+    dx   = float(alat)/nk
+
+    kgrid = np.fft.fftn( np.fft.ifftshift(fr)*dx**ndim )
+    return kgrid
+
+# end def
