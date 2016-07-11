@@ -206,14 +206,24 @@ def get_jastrow_list(qmcpack_input,one_body=True,two_body=True,just_wf=False):
     
     jastrow_list = []
     if one_body:
-        for name in jastrows.J1.correlations.keys():
-            qij1 = jastrows.J1.correlations[name]
+        j1_keys = jastrows.J1.keys()
+        if "correlations" in j1_keys:
+            for name in jastrows.J1.correlations.keys():
+                qij1 = jastrows.J1.correlations[name]
+                x,y  = two_body_jastrow( qij1 )
+                entry = {"name":name,"x":x,"y":y
+                         ,"type":"one-body"
+                         ,"path":qmcpack_input}
+                jastrow_list.append(entry)
+            # end for name
+        else:
+            qij1 = jastrows.J1.correlation
             x,y  = two_body_jastrow( qij1 )
-            entry = {"name":name,"x":x,"y":y
+            entry = {"name":qij1.elementtype,"x":x,"y":y
                      ,"type":"one-body"
                      ,"path":qmcpack_input}
             jastrow_list.append(entry)
-        # end for name
+        # end if
     # end if
 
     if two_body:
