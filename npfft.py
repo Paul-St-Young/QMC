@@ -4,6 +4,17 @@ import numpy as np
 
 # Fourier grid
 # =====
+def freqint_to_kint(freqint,nk):
+    """ put reciprocal lattice labels in ``standard'' order 
+     use as: [map( lambda x:freqint_to_kint(x,nk), gvec) for gvec in gvecs] 
+     where gvecs is a list of reciprocal lattice vectors as integers """
+    if freqint>=0:
+        return freqint
+    else:
+        return nk + freqint
+    # end if
+# end def
+
 def kint_to_kvec(kint,nk,alat):
     """ convert an integer kint, to kpoint given:
          1. real space box length: alat
