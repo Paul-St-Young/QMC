@@ -76,13 +76,14 @@ def inv_fft(kgrid,alat):
     ndim = len(kgrid.shape)
     nk   = kgrid.shape[0]
     dx   = float(alat)/nk
+    omega= alat**3.
     half = float(alat)/2.
     if nk%2==0:
         x = np.arange(-half,half,dx)
     else:
         x = np.linspace(-half,half,nk)
     # end if
-    fr = np.fft.ifftn(kgrid)/dx**ndim
+    fr = np.fft.ifftn(kgrid) *omega/dx**ndim # inv FFT normalization
     fr = np.fft.fftshift(fr)
     return x,fr
 # end def
