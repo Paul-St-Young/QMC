@@ -12,7 +12,12 @@ from matplotlib.ticker import FormatStrFormatter
 
 def grab_density_parameters(qmc_input_xml):
     root = etree.parse(qmc_input_xml)
-    dens_est = root.find("qmcsystem/hamiltonian/estimator")
+    dens_est_list = root.xpath('//estimator[@type="density"]')
+    if len(dens_est_list) != 1:
+        print "expected 1 density estimator, found: ", len(dens_est_list)
+        raise InputError()
+    # end if
+    dens_est = dens_est_list[0]
     nx,ny,nz = [int(1./float(x)) for x in dens_est.attrib["delta"].split()]
 
     x = np.linspace( float(dens_est.attrib["x_min"]),
