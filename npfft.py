@@ -85,6 +85,8 @@ def inv_fft(kgrid,alat):
     # end if
     fr = np.fft.ifftn(kgrid) *omega/dx**ndim # inv FFT normalization
     fr = np.fft.fftshift(fr)
+    # !!! all the above is equivalent to
+    #  fr = np.fft.fftshift( np.fft.ifftn(kgrid) ) * nk**3.
     return x,fr
 # end def
 
