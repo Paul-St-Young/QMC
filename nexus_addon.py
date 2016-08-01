@@ -239,3 +239,91 @@ def get_jastrow_list(qmcpack_input,one_body=True,two_body=True,just_wf=False):
     
     return jastrow_list
 # end def 
+
+def to_dict(iterable):
+    d = dict()
+    for k,v in iterable.iteritems():
+        try:
+            len(v.keys())
+            d[k] = to_dict(v)
+        except:
+            d[k] = v
+        #end if
+    #end for
+    return d
+#end def to_dict
+
+from qmca import DatAnalyzer
+from lxml import etree
+
+# specify equilibration length before use
+#from qmca import QBase
+#options = {"equilibration":"auto"}
+#QBase.options.transfer_from(options)
+
+def scalars_from_input(qmcinput,extract = ["mean","error"]):
+    """ Look for calculations specified in qmcinput xml, analyze each scalar.dat file and return a dictionary of data. Need to specify equilibration length with:
+    from qmca import QBase
+    options = {"equilibration":"auto"}
+    QBase.options.transfer_from(options) """
+    
+    # current directory
+    subdir = "/".join( qmcinput.split("/")[:-1] ) +"/"
+    
+    # parse input
+    xml = etree.parse(qmcinput)
+    
+    # used for QMCPACK naming
+    proj_id   = xml.xpath("//project")[0].get("id") 
+    num_start = int( xml.xpath("//project")[0].get("series") )
+    
+    data = []
+    calcs = xml.xpath("//qmc")
+    for iqmc in range(len(calcs)):
+
+        entry = {}
+
+        # get input parameters
+        params = calcs[iqmc].xpath(".//parameter")
+        param_dict = {}
+        for param in params:
+
+            value = param.text
+            try:
+                value = int(value)
+            except ValueError:
+                try:
+                    value = float(value)
+                except ValueError:
+                    pass
+                # end try
+            # end try
+
+            param_dict[ param.get("name") ] = value 
+
+        # end for param
+        entry["settings"] = param_dict
+
+        # get scalar values
+        scalar_file = subdir + ".".join([proj_id
+            ,"s"+str(num_start+iqmc).zfill(3),"scalar","dat"])
+        entry["path"] = scalar_file
+        entry["iqmc"] = iqmc
+
+        try:
+            qa = DatAnalyzer(scalar_file,0)
+        except:
+            print "failed to read ",scalar_file
+        # end try 
+        
+        scalar_attribs = to_dict(qa.stats)
+        for key in scalar_attribs:
+            for name in extract:
+                entry[key+"_"+name] = scalar_attribs[key][name]
+            # end for
+        # end for
+
+        data.append(entry)
+    # end for i
+    return data
+# end def 
