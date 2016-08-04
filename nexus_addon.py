@@ -114,7 +114,15 @@ def qmcpack_scalars(qmc_inputs,img_name = "image.p",save_image=True
     for qmc_input in qmc_inputs:
 
         # initialize an analyzer
-        qa = QmcpackAnalyzer(qmc_input)
+        try:
+            qa = QmcpackAnalyzer(qmc_input)
+        except:
+            if warn:
+                raise AttributeError("failed at %s"%qmc_input)
+            else:
+                continue
+            # end if
+        # end try
 
         # extract some input data
         qi = qa.info.input
