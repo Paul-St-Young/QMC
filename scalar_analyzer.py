@@ -36,24 +36,33 @@ class scalar_analyzer:
             # save each column of data under its header
             df[header[i]] = data[i]
         # end for i
+        df = df.drop("index",axis=1)
         
         # save DataFrame object
-        self.dataframe = df
+        self.dataframe  = df
+        self.components = df.columns.values
         # return DataFrame object
         return df
     # end def energy_components
     
-    def plot_components(self,components,df):
+    def plot_components(self,components,df=0):
         # plot components from a data frame together
+        if type(df) != pd.core.frame.DataFrame:
+            df = self.dataframe
+        # ned if
+        if df.empty:
+            raise SyntaxError("Did you analyze a trace file with this analyzer? If not, pass in df as third argument.")
+        # end if
+        if type(components) == str:
+            components = [components]
+        # end if
 
         fig = plt.figure()
         ax  = fig.add_subplot(111)
 
         for component in components:
-            if component not in df.columns:
-                print component + " is not in the DataFrame with columns:"
-                print df.columns.values
-                return
+            if component not in self.components:
+                raise IndexError("%s is not in the DataFrame with columns: \n %s " % (component,self.components) )
             # end if
             ax.plot(df[component],label=component)
         # end for
