@@ -49,7 +49,7 @@ class scalar_analyzer:
         # plot components from a data frame together
         if type(df) != pd.core.frame.DataFrame:
             df = self.dataframe
-        # ned if
+        # end if
         if df.empty:
             raise SyntaxError("Did you analyze a trace file with this analyzer? If not, pass in df as third argument.")
         # end if
@@ -102,5 +102,18 @@ class scalar_analyzer:
     def error(self,trace):
         return trace.std()/np.sqrt( len(trace)/self.corr(trace) )
     # end def error
+
+    def block(self,data,block_size):
+        trace = np.array(data)
+        nblock = len(trace)/block_size
+        nleft  = len(trace) - nblock*block_size
+        if (nleft != 0):
+            print "Warning: last ",nleft," entries discarded"
+            print "because block size ",block_size," does not divide ",len(trace)
+            trace = trace[:-nleft]
+        # end if
+        blocks = map(np.mean, trace.reshape(nblock,block_size) )
+        return blocks
+    # end def block
 
 # end class scalar_analyzer
