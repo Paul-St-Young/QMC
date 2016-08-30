@@ -335,3 +335,27 @@ def scalars_from_input(qmcinput,extract = ["mean","error"]):
     # end for i
     return data
 # end def 
+
+from nexus import PwscfAnalyzer
+def qe_scalars(qeinputs):
+    
+    data = []
+    for pwinput in qeinputs:
+        pa = PwscfAnalyzer(pwinput)
+        pa.analyze()
+        entry = {
+            "path":pa.path,
+            "energy":pa.E,
+            "pressure":pa.pressure,
+            "volume":pa.volume,
+            "system":pa.input.system.to_dict(),
+            "forces":pa.forces,
+            "stress":pa.stress,
+            "kgrid":pa.input.k_points.grid,
+            "walltime":pa.walltime
+        }
+        data.append(entry)
+    # end for
+    return data
+
+# end for
