@@ -1,21 +1,29 @@
 from fileio import TextFile
+import numpy as np
+from mmap import mmap
 
-# extend MyTextFile to recognize block pattern
-class MyTextFile(TextFile):
-    def block_between(self,header,trailer):
-        
-        header_pos = self.mm.find(header)
-        trailer_pos = self.mm.find(trailer)
-        
-        block = self.mm[header_pos:trailer_pos]
-        if header_pos >= trailer_pos:
-            print "header {:d} appears after trailer {:d}".format(header_pos,trailer_pos)
-        # end if
-        
-        trim_head_tail = "\n".join( block.split("\n")[1:-2] )
-        return trim_head_tail.strip("\n")
-    # end def 
-# end class
+def read_xsf_datagrid(filename):
+    
+    lat_skip = 4 # first 4 lines after DATAGRID_3D_ORBITAL are lattice descriptions
+    end_skip = 4 # 4 extra lines after data grid
+    
+    myfile = open(filename,"r+")
+    mm = mmap(myfile.fileno(),0)
+    idx = mm.find("DATAGRID_3D_ORBITAL")
+    mm.seek(idx)
+    mm.readline()
+
+    grid_size = map(int,mm.readline().strip().strip("\n").split())
+    for i in range(lat_skip):
+        mm.readline()
+    # end for
+    
+    data_grid_text = mm[mm.tell():mm.size()]
+    data_grid = [map(float,line.strip().split()) for line in data_grid_text.split("\n")[:-end_skip]]
+    data_grid = np.array(data_grid).astype(float)
+    data_grid = data_grid.reshape(tuple(grid_size))
+    return data_grid
+# end def
 
 def extract_scalar( qmc_run
     ,extract_names   = ["LocalEnergy","LocalEnergyVariance"], extract_all=False
@@ -195,7 +203,6 @@ def collect_gamess_from_inputs(inputs):
 # end def collect_gamess_from_inputs
 
 from nexus import QmcpackInput
-import numpy as np
 def get_jastrow_list(qmcpack_input,one_body=True,two_body=True,just_wf=False):
     
     def two_body_jastrow(correlation):
