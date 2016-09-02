@@ -299,6 +299,7 @@ def scalars_from_input(qmcinput,extract = ["mean","error"]):
         entry = {}
 
         # get input parameters
+        method = calcs[iqmc].attrib["method"]
         params = calcs[iqmc].xpath(".//parameter")
         param_dict = {}
         for param in params:
@@ -321,9 +322,10 @@ def scalars_from_input(qmcinput,extract = ["mean","error"]):
 
         # get scalar values
         scalar_file = subdir + ".".join([proj_id
-            ,"s"+str(num_start+iqmc).zfill(3),"scalar","dat"])
+            ,"s"+str(num_start+iqmc).zfill(3),"scalar","dat"]).strip("/")
         entry["path"] = scalar_file
         entry["iqmc"] = iqmc
+        entry["method"] = method
 
         try:
             qa = DatAnalyzer(scalar_file,0)
