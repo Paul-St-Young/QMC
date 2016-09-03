@@ -330,7 +330,7 @@ def scalars_from_input(qmcinput,extract = ["mean","error"]):
         try:
             qa = DatAnalyzer(scalar_file,0)
         except:
-            print "failed to read ",scalar_file
+            print "failed to read ",scalar_file, " did you initialize QBase? Read docstring"
         # end try 
         
         scalar_attribs = to_dict(qa.stats)

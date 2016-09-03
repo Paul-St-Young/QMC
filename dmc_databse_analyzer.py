@@ -4,7 +4,7 @@ import pandas as pd
 def find_observable_names(all_columns):
     
     special_columns = set(['AcceptRatio', 'BlockCPU', 'BlockWeight'
-      , 'Efficiency', 'TotalSamples', 'TotalTime', 'Variance'])
+      , 'Efficiency', 'TotalSamples', 'TotalTime', 'Variance', 'LocalEnergy'])
     
     observable_names = []
     for col in all_columns:
