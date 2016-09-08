@@ -101,3 +101,36 @@ def add_sum_columns(new_name,cols_to_sum,df):
     df[new_name+nscheme.subfix_error] = new_error
 # end def
 
+def display_mean_error(mean,error):
+    """ return string rep. of mean +- error in readable format eg. 7.21(2) """
+    
+    # determine the last digit above error
+    guess = int( round( np.log10(error) ) )
+    for digit in range(guess+3,guess-3,-1):
+        if error > 10**digit:
+            break
+        # end if
+    # end for
+    digit = -digit
+    
+    err_str = str( int( round(error,digit) * 10**digit ) )
+    return str( round(mean,digit) ) + "(" + err_str + ")"
+
+# end def display_mean_error
+
+def add_display_columns(interest,df):
+    """ add mean(error) string columns for every quantity of interest """
+    for col in interest:
+        df[col] = df[col+nscheme.subfix_mean].copy()
+        for idx in df.index:
+            mean  = df.loc[idx,col + nscheme.subfix_mean]
+            error = df.loc[idx,col + nscheme.subfix_error]
+            if np.isnan(mean) or np.isnan(error):
+                df.loc[idx,col] = np.nan
+            else:
+                df.loc[idx,col] = display_mean_error(mean,error)
+            # end if
+        # end for idx
+    # end for col
+# end def add_display_columns
+
