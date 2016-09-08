@@ -1,15 +1,32 @@
 import numpy as np
 import pandas as pd
 
+class NamingScheme:
+    def __init__(self):
+        self.subfix_mean  = "_mean"
+        self.subfix_error = "_error"
+        self.special_columns = set(['AcceptRatio', 'BlockCPU', 'BlockWeight'
+      , 'Efficiency', 'TotalSamples', 'TotalTime', 'Variance', 'LocalEnergy'])
+    # end def __init__
+# end class
+
+# global class is a little better than a bunch of global varibales?
+nscheme = NamingScheme()
+
+def add_subfix(columns):
+    columnv  = [name + nscheme.subfix_mean  for name in columns]
+    columne  = [name + nscheme.subfix_error for name in columns]
+    return columnv,columne
+# end def add_subfix
+
 def find_observable_names(all_columns):
     
-    special_columns = set(['AcceptRatio', 'BlockCPU', 'BlockWeight'
-      , 'Efficiency', 'TotalSamples', 'TotalTime', 'Variance', 'LocalEnergy'])
+    special_columns = nscheme.special_columns
     
     observable_names = []
     for col in all_columns:
-        if col.endswith("_mean"):
-            col_name = col.replace("_mean","")
+        if col.endswith(nscheme.subfix_mean):
+            col_name = col.replace(nscheme.subfix_mean,"")
             if col_name not in special_columns:
                 observable_names.append( col_name )
             # end if
@@ -19,7 +36,10 @@ def find_observable_names(all_columns):
     return observable_names
 # end def find_observable_names
 
-def get_better_observables(one_vmc,some_dmcs):
+def get_better_observables(one_vmc,some_dmcs,linear=True):
+    """ extrapolate mixed estimators using a vmc run
+      linear extrapolation: 2*DMC-VMC
+      non-linear extrap.: DMC^2/VMC"""
     
     # get VMC observable
     assert len(one_vmc)==1, "must give one and only one vmc run, given " + str(len(one_vmc))
@@ -31,8 +51,8 @@ def get_better_observables(one_vmc,some_dmcs):
     
     for col_name in col_names:
         
-        mean_name  = col_name+"_mean"
-        error_name = col_name+"_error"
+        mean_name  = col_name + nscheme.subfix_mean
+        error_name = col_name + nscheme.subfix_error
         
         # get VMC observable
         trial  = one_vmc.loc[0,mean_name]
@@ -44,7 +64,12 @@ def get_better_observables(one_vmc,some_dmcs):
             mixed  = some_dmcs.loc[idx,mean_name]
             mixede = some_dmcs.loc[idx,error_name]
             
-            extrap.loc[idx,mean_name]  = mixed**2./trial
+            if linear:
+                extrap.loc[idx,mean_name]  = 2*mixed - trial
+            else:
+                extrap.loc[idx,mean_name]  = mixed**2./trial
+            # end if
+
             extrap.loc[idx,error_name] = np.sqrt(triale**2.+mixede**2.)
         # end for col_name
         
@@ -63,4 +88,16 @@ def process_dmc_data_frame(df):
     return new_df
 # end def process_dmc_data_frame
 
+def sum_columns(cols_to_sum,df):
+    columnv, columne = add_subfix(cols_to_sum)
+    new_mean  = df[columnv].apply(np.sum,axis=1)
+    new_error = df[columne].apply(lambda arr:np.sqrt(np.sum(arr**2.)),axis=1)
+    return new_mean,new_error
+# end def
+
+def add_sum_columns(new_name,cols_to_sum,df):
+    new_mean, new_error = sum_columns(cols_to_sum,df)
+    df[new_name+nscheme.subfix_mean]  = new_mean
+    df[new_name+nscheme.subfix_error] = new_error
+# end def
 
