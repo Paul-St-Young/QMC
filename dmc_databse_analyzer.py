@@ -95,6 +95,18 @@ def sum_columns(cols_to_sum,df):
     return new_mean,new_error
 # end def
 
+def sub_rows(irow_label,jrow_label,cols_to_sub,df):
+    """ return a new row with df.iloc[irow] - df.iloc[jrow] to df"""
+    columnv, columne = add_subfix(cols_to_sub)
+    new_row = df.loc[irow_label].copy()
+    for icol in range(len(cols_to_sub)):
+        new_row[columnv[icol]] = df.loc[irow_label,columnv[icol]] - df.loc[jrow_label,columnv[icol]]
+        new_row[columne[icol]] = np.sqrt( df.loc[irow_label,columne[icol]]**2 + df.loc[jrow_label,columne[icol]]**2 )
+    # end for i
+
+    return new_row
+# end def
+
 def add_sum_columns(new_name,cols_to_sum,df):
     new_mean, new_error = sum_columns(cols_to_sum,df)
     df[new_name+nscheme.subfix_mean]  = new_mean
@@ -105,6 +117,9 @@ def display_mean_error(mean,error):
     """ return string rep. of mean +- error in readable format eg. 7.21(2) """
     
     # determine the last digit above error
+    if error < 1e-16:
+        return "%f(0)" % mean
+    # end if
     guess = int( round( np.log10(error) ) )
     for digit in range(guess+3,guess-3,-1):
         if error > 10**digit:
