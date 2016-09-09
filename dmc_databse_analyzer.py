@@ -149,3 +149,51 @@ def add_display_columns(interest,df):
     # end for col
 # end def add_display_columns
 
+def vmc_dmc_extrap_table(static_json,dynamic_json):
+    # read databases
+    static   = pd.read_json(static_json)
+    dynamic  = pd.read_json(dynamic_json)
+    static["lattice"]  = "static"
+    dynamic["lattice"] = "dynamic"
+
+    # concatenate VMC, DMC and extrap runs
+    table = pd.DataFrame()
+    for mydf in [static,dynamic]:
+        vmc    = mydf.loc[(mydf["method"]=="vmc")]
+        dmc    = mydf.loc[(mydf["method"]=="dmc") & (mydf["iqmc"]==mydf["iqmc"].max())]
+        extrap = mydf.loc[(mydf["method"]=="extrap") & (mydf["iqmc"]==mydf["iqmc"].max())]
+        table  = table.append([vmc,dmc,extrap])
+    # end for mydf
+    table = table.reset_index().drop("index",axis=1)
+    
+    return table
+# end def
+
+def static_dynamic_energetics_table(vde_table
+    , natom, interest = ["LocalEnergy","Te","Tp","Vee","Vep","Vpp"]):
+
+    # select columns of interest
+    columnv, columne = add_subfix(interest)
+
+    # per atom
+    vde_table.loc[:,columnv+columne] = vde_table[columnv+columne]/natom
+    vde_table = vde_table.loc[:,["method","lattice"]+columnv+columne]
+
+    # no proton kinetic for static lattice calculations
+    if "Tp" in interest:
+        vde_table.loc[vde_table["lattice"]=="static","Tp_mean"] = 0
+    # end if
+
+    # subtract rows, !!!! hard-coded indices 
+    dmc_dyn_stat    = sub_rows(4,1,interest,vde_table)
+    extrap_dyn_stat = sub_rows(5,2,interest,vde_table)
+
+    for entry in [dmc_dyn_stat,extrap_dyn_stat]:
+        entry["lattice"] = "dyn.-stat."
+        vde_table = vde_table.append(entry)
+    # end for
+    
+    vde_table = vde_table.reset_index().drop("index",axis=1)
+    
+    return vde_table
+# end def
