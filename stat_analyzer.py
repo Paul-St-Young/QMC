@@ -36,3 +36,38 @@ def max_overlap_ratio(y_vmc,y_dmc,eps):
     ratio[small_idx] = 1
     return ratio
 # end def
+
+def dft_orbital(fhandle,ik,ibnd,nx=0):
+    
+    # get orbital in reciprocal space
+    gvecs = fhandle["electrons/kpoint_0/gvectors"]
+    orbg  = fhandle["electrons/kpoint_%d/spin_0/state_%d/psi_g" % (ik,ibnd)]
+    
+    if nx == 0:
+        try:
+            orbr = fhandle["electrons/kpoint_0/spin_0/state_0/psi_r"]
+            nx   = orbr.shape[0]
+        except:
+            raise IndexError("psi_r does not exist, please provide FFT grid size nx")
+        # end try
+    # end if
+    
+    # populate FFT grid
+    kgrid = np.zeros([nx,nx,nx],dtype=complex)
+    for i in range(len(gvecs)):
+        gvec = gvecs[i]
+        kgrid[tuple(gvec)] = orbg[i,0] + 1j*orbg[i,1]
+    # end for i
+    
+    # invfft to obtain orbital in real space
+    orbr = np.fft.fftshift( np.fft.ifftn(kgrid) ) * nx**3.
+    
+    # get real space grid points
+    # !!!! specific to cubic grids for now
+    lattice = fhandle["supercell/primitive_vectors"].value
+    alat    = lattice[0,0]
+    x       = np.arange(-alat/2,alat/2,alat/nx)
+    orbr = np.abs(orbr)
+    
+    return x,orbr
+# end def
