@@ -276,7 +276,7 @@ from lxml import etree
 #options = {"equilibration":"auto"}
 #QBase.options.transfer_from(options)
 
-def scalars_from_input(qmcinput,extract = ["mean","error"]):
+def scalars_from_input(qmcinput,extract = ["mean","error"],skip_failed=False):
     """ Look for calculations specified in qmcinput xml, analyze each scalar.dat file and return a dictionary of data. Need to specify equilibration length with:
     from qmca import QBase
     options = {"equilibration":"auto"}
@@ -330,7 +330,12 @@ def scalars_from_input(qmcinput,extract = ["mean","error"]):
         try:
             qa = DatAnalyzer(scalar_file,0)
         except:
+            if skip_failed:
+                #data.append(entry)
+                continue
+            # end if
             print "failed to read ",scalar_file, " did you initialize QBase? Read docstring"
+            print " if there are known failed simulations, set skip_failed=True. "
         # end try 
         
         scalar_attribs = to_dict(qa.stats)
