@@ -346,23 +346,44 @@ def scalars_from_input(qmcinput,extract = ["mean","error"]):
 # end def 
 
 from nexus import PwscfAnalyzer
-def qe_scalars(qeinputs):
+def qe_scalars(qeinputs,warn=True):
+    """ given a list of quantum espresso inputs, return a dictionary of simulation data.
+     use warn=False if you know which simulations did not finish. """
     
     data = []
     for pwinput in qeinputs:
         pa = PwscfAnalyzer(pwinput)
         pa.analyze()
-        entry = {
-            "path":pa.path,
-            "energy":pa.E,
-            "pressure":pa.pressure,
-            "volume":pa.volume,
-            "system":pa.input.system.to_dict(),
-            "forces":pa.forces,
-            "stress":pa.stress,
-            "kgrid":pa.input.k_points.grid,
-            "walltime":pa.walltime
-        }
+
+        failed = False
+        try:
+            pa.E
+        except AttributeError:
+            failed = True
+            if warn:
+                print pwinput," failed/did not finish"
+            # end if
+        # end try
+
+        if failed:
+            entry = {
+                "path":pa.path,
+                "system":pa.input.system.to_dict(),
+                "kgrid":pa.input.k_points.grid,
+            }
+        else:
+            entry = {
+                "path":pa.path,
+                "energy":pa.E,
+                "pressure":pa.pressure,
+                "volume":pa.volume,
+                "system":pa.input.system.to_dict(),
+                "forces":pa.forces,
+                "stress":pa.stress,
+                "kgrid":pa.input.k_points.grid,
+                "walltime":pa.walltime
+            }
+        # end if failed
         data.append(entry)
     # end for
     return data
