@@ -4,10 +4,12 @@ from mmap import mmap
 
 class MoldenNormalMode:
     
-    def __init__(self,filename):
+    def __init__(self,filename,nmode=None,natom=None):
         self.fhandle   = open(filename,"r+")
         self.mm        = mmap(self.fhandle.fileno(),0)
         self.sections  = None
+        self.nmode     = nmode
+        self.natom     = natom
     # end def
     
     def find_sections(self,start_marker="[",nsection_max=20):
@@ -71,9 +73,11 @@ class MoldenNormalMode:
         sections = self.find_sections()
         atom_lines = self.section_text("FR-COORD").split("\n")[:-1] 
         natom = len(atom_lines)
+        self.natom = natom
         
         vib_start_idx = self.find_modes()
         nmode = len(vib_start_idx)-1
+        self.nmode = nmode
 
         normal_modes = np.zeros([nmode,natom,ndim])
         for imode in range(nmode):
@@ -86,5 +90,19 @@ class MoldenNormalMode:
             normal_modes[imode,:,:] = disp_vecs
         # end for imode
         return normal_modes
+    # end def
+
+    def read_freqs(self):
+        if self.nmode is None:
+          self.read_modes()
+        # end if
+
+        freq_lines = self.section_text("FREQ").split("\n")
+        if len(freq_lines) == self.nmode+1:
+            freq_lines = freq_lines[:-1]
+        # end if
+        
+        freqs = map(float,freq_lines)
+        return freqs
     # end def
 # end class
