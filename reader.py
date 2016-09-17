@@ -50,7 +50,7 @@ class MoldenNormalMode:
         return block
     # end def
     
-    def find_modes(self, nmode_max = 50, start_marker = "vibration"):
+    def find_modes(self, nmode_max = 256, start_marker = "vibration"):
         
         self.mm.seek(0)
         

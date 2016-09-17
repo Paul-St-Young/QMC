@@ -375,6 +375,7 @@ def qe_scalars(qeinputs,warn=True):
                 "path":pa.path,
                 "system":pa.input.system.to_dict(),
                 "kgrid":pa.input.k_points.grid,
+                "failed":True
             }
         else:
             entry = {
@@ -386,7 +387,8 @@ def qe_scalars(qeinputs,warn=True):
                 "forces":pa.forces,
                 "stress":pa.stress,
                 "kgrid":pa.input.k_points.grid,
-                "walltime":pa.walltime
+                "walltime":pa.walltime,
+                "failed":False
             }
         # end if failed
         data.append(entry)
