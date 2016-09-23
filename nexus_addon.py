@@ -1,6 +1,53 @@
-from fileio import TextFile
 import numpy as np
 from mmap import mmap
+import os
+
+def parse_qmca_output(filename, mean_postfix = "_mean", err_postfix  = "_error"):
+
+    path = os.path.dirname(filename)
+    fhandle = open(filename,"r+")
+    mm = mmap(fhandle.fileno(),0)
+
+    data = []
+    nseries_max = 10
+    for iseries in range(nseries_max):
+
+        idx = mm.find("series")
+        if idx == -1:
+            break
+        # end if
+        mm.seek( idx )
+        mm.readline()
+        if mm.tell() >= mm.size():
+            break
+        # end if
+
+        fhandle.seek( idx )
+        tokens = fhandle.readline().split()
+        series, num = tokens
+        entry = {"iqmc":int(num),"path":path}
+
+        for line in fhandle:
+
+            if "series" in line:
+                break
+            # end if
+
+            if "=" in line:
+                tokens = line.split()
+                name,eq,value,pm,error = tokens
+                entry[name+mean_postfix] = float(value)
+                entry[name+err_postfix]  = float(error)
+            # end if
+
+        # end for line
+        data.append(entry)
+
+    # end for iseries
+    
+    return data
+
+# end def parse_qmca_output
 
 def read_xsf_datagrid(filename):
     
