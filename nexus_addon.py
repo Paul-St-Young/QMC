@@ -338,6 +338,13 @@ def scalars_from_input(qmcinput,extract = ["mean","error"],skip_failed=False):
     # used for QMCPACK naming
     proj_id   = xml.xpath("//project")[0].get("id") 
     num_start = int( xml.xpath("//project")[0].get("series") )
+
+    # structure
+    lat_section = xml.xpath('.//parameter[@name="lattice"]')[0]
+    unit = lat_section.attrib["units"]
+    lat_texts = lat_section.text.split("\n")[1:-1]
+    lattice = np.array( [map(float,line.strip().split()) for line in lat_texts] )
+    volume  = np.dot(lattice[0],np.cross(lattice[1],lattice[2]))
     
     data = []
     calcs = xml.xpath("//qmc")
@@ -373,6 +380,8 @@ def scalars_from_input(qmcinput,extract = ["mean","error"],skip_failed=False):
         entry["path"] = scalar_file
         entry["iqmc"] = iqmc
         entry["method"] = method
+        entry["volume"] = volume
+        entry["vol_unit"] = unit
 
         try:
             qa = DatAnalyzer(scalar_file,0)
