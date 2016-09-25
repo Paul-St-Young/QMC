@@ -452,3 +452,24 @@ def qe_scalars(qeinputs,warn=True):
     return data
 
 # end for
+
+def relaxed_structure(subdir,infile_name,outfile_name):
+
+    # get analyzer
+    pa = PwscfAnalyzer(subdir,infile_name,outfile_name)
+    pa.analyze()
+
+    pi         = pa.input
+    pos_unit   = pi.atomic_positions.specifier.strip("()")
+    lat_unit   = pi.cell_parameters.specifier.strip("()")
+    lattice    = pi.cell_parameters.vectors
+
+    # extract structural info
+    num_structs = len( pa.structures )
+    optimized_structure = pa.structures[num_structs-1]
+    elem = optimized_structure.atoms
+    pos  = optimized_structure.positions
+
+    return {"elem":elem,"pos":pos,"pos_unit":pos_unit
+            ,"lat_unit":lat_unit,"lattice":lattice}
+# end def
