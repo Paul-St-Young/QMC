@@ -106,3 +106,24 @@ class MoldenNormalMode:
         return freqs
     # end def
 # end class
+
+from copy import deepcopy
+def read_two_body_jastrows(jastrows):
+    
+    if (jastrows.attrib["type"] != "Two-Body"):
+        raise TypeError("input is not a two-body Jastrow xml node")
+    elif (jastrows.attrib["function"].lower() != "bspline"):
+        raise NotImplementedError("can only handle bspline Jastrows for now")
+    # end if
+    
+    data = []
+    for corr in jastrows.xpath('./correlation'):
+        coeff = corr.xpath('./coefficients')[0]
+        entry = deepcopy( corr.attrib )
+        entry.update(coeff.attrib)
+        entry['coeff'] = np.array(coeff.text.split(),dtype=float)
+        data.append(entry)
+    # end for corr
+    
+    return data
+# end def read_two_body_jastrows
