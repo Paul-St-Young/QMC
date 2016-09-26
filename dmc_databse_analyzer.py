@@ -95,6 +95,15 @@ def sum_columns(cols_to_sum,df):
     return new_mean,new_error
 # end def
 
+def div_columns(cols_to_div,df):
+    columnv, columne = add_subfix(cols_to_div)
+    numv,denv = columnv
+    nume,dene = columne
+    ratio_mean  = abs(df[numv]/df[denv])
+    ratio_error = np.sqrt(df[nume]**2. + df[dene]**2.)
+    return ratio_mean,ratio_error
+# end def
+
 def sub_rows(irow_label,jrow_label,cols_to_sub,df):
     """ return a new row with df.iloc[irow] - df.iloc[jrow] to df"""
     columnv, columne = add_subfix(cols_to_sub)
