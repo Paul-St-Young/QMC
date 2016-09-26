@@ -323,6 +323,7 @@ from lxml import etree
 #options = {"equilibration":"auto"}
 #QBase.options.transfer_from(options)
 
+import os
 def scalars_from_input(qmcinput,extract = ["mean","error"],skip_failed=False):
     """ Look for calculations specified in qmcinput xml, analyze each scalar.dat file and return a dictionary of data. Need to specify equilibration length with:
     from qmca import QBase
@@ -347,7 +348,13 @@ def scalars_from_input(qmcinput,extract = ["mean","error"],skip_failed=False):
     volume  = np.dot(lattice[0],np.cross(lattice[1],lattice[2]))
     
     data = []
-    calcs = xml.xpath("//qmc")
+    loops = xml.xpath('//loop')
+    if len(loops) != 0:
+        calcs = [qmc for loop in loops for qmc in loop.xpath('//qmc') for i in range(int(loop.attrib['max']))]
+    else:
+        calcs = xml.xpath("//qmc")
+    # end if
+
     for iqmc in range(len(calcs)):
 
         entry = {}
@@ -377,7 +384,7 @@ def scalars_from_input(qmcinput,extract = ["mean","error"],skip_failed=False):
         # get scalar values
         scalar_file = subdir + ".".join([proj_id
             ,"s"+str(num_start+iqmc).zfill(3),"scalar","dat"]).strip("/")
-        entry["path"] = scalar_file
+        entry["path"] = os.path.dirname(scalar_file)
         entry["iqmc"] = iqmc
         entry["method"] = method
         entry["volume"] = volume
