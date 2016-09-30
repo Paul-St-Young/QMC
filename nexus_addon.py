@@ -332,6 +332,7 @@ def scalars_from_input(qmcinput,extract = ["mean","error"],skip_failed=False):
     
     # current directory
     subdir = "/".join( qmcinput.split("/")[:-1] ) +"/"
+    input_name = qmcinput.split("/")[-1]
     
     # parse input
     xml = etree.parse(qmcinput)
@@ -382,7 +383,12 @@ def scalars_from_input(qmcinput,extract = ["mean","error"],skip_failed=False):
         entry["settings"] = param_dict
 
         # get scalar values
-        scalar_file = subdir + ".".join([proj_id
+        if 'twistnum' in input_name: # !!!! hack to read in nexus-generated twist runs
+            prefix = input_name[:input_name.find('twistnum')].strip('.')
+        else:
+            prefix = proj_id
+        # end if 'twistname'
+        scalar_file = subdir + ".".join([prefix
             ,"s"+str(num_start+iqmc).zfill(3),"scalar","dat"]).strip("/")
         entry["path"] = os.path.dirname(scalar_file)
         entry["iqmc"] = iqmc
