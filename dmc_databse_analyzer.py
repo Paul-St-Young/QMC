@@ -13,11 +13,15 @@ class NamingScheme:
 # global class is a little better than a bunch of global varibales?
 nscheme = NamingScheme()
 
-def add_subfix(columns):
+def add_subfix(name):
+    return name + nscheme.subfix_mean, name + nscheme.subfix_error
+# end def
+
+def add_subfixes(columns):
     columnv  = [name + nscheme.subfix_mean  for name in columns]
     columne  = [name + nscheme.subfix_error for name in columns]
     return columnv,columne
-# end def add_subfix
+# end def add_subfixes
 
 def find_observable_names(all_columns):
     
@@ -89,14 +93,14 @@ def process_dmc_data_frame(df):
 # end def process_dmc_data_frame
 
 def sum_columns(cols_to_sum,df):
-    columnv, columne = add_subfix(cols_to_sum)
+    columnv, columne = add_subfixes(cols_to_sum)
     new_mean  = df[columnv].apply(np.sum,axis=1)
     new_error = df[columne].apply(lambda arr:np.sqrt(np.sum(arr**2.)),axis=1)
     return new_mean,new_error
 # end def
 
 def div_columns(cols_to_div,df):
-    columnv, columne = add_subfix(cols_to_div)
+    columnv, columne = add_subfixes(cols_to_div)
     numv,denv = columnv
     nume,dene = columne
     ratio_mean  = abs(df[numv]/df[denv])
@@ -106,7 +110,7 @@ def div_columns(cols_to_div,df):
 
 def sub_rows(irow_label,jrow_label,cols_to_sub,df):
     """ return a new row with df.iloc[irow] - df.iloc[jrow] to df"""
-    columnv, columne = add_subfix(cols_to_sub)
+    columnv, columne = add_subfixes(cols_to_sub)
     new_row = df.loc[irow_label].copy()
     for icol in range(len(cols_to_sub)):
         new_row[columnv[icol]] = df.loc[irow_label,columnv[icol]] - df.loc[jrow_label,columnv[icol]]
@@ -182,7 +186,7 @@ def static_dynamic_energetics_table(vde_table
     , natom, interest = ["LocalEnergy","Te","Tp","Vee","Vep","Vpp"]):
 
     # select columns of interest
-    columnv, columne = add_subfix(interest)
+    columnv, columne = add_subfixes(interest)
 
     # per atom
     vde_table.loc[:,columnv+columne] = vde_table[columnv+columne]/natom
