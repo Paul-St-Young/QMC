@@ -11,7 +11,7 @@ def write_j2section(entry):
         # end for 
         corr = etree.Element('correlation',corr_dict)
 
-        coeff = etree.Element('coefficient',{'id':dcorr['id'],'type':'Array'})
+        coeff = etree.Element('coefficients',{'id':dcorr['id'],'type':'Array'})
         coeff_text = "\n" + " ".join(map(str,dcorr['coeff'])) + "\n"
         coeff.text = coeff_text
 
