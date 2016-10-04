@@ -342,11 +342,19 @@ def scalars_from_input(qmcinput,extract = ["mean","error"],skip_failed=False):
     num_start = int( xml.xpath("//project")[0].get("series") )
 
     # structure
-    lat_section = xml.xpath('.//parameter[@name="lattice"]')[0]
-    unit = lat_section.attrib["units"]
-    lat_texts = lat_section.text.split("\n")[1:-1]
-    lattice = np.array( [map(float,line.strip().split()) for line in lat_texts] )
-    volume  = np.dot(lattice[0],np.cross(lattice[1],lattice[2]))
+    open_system = False
+    lat_sections= xml.xpath('.//parameter[@name="lattice"]')
+    if len(lat_sections) == 1:
+        lat_section = lat_sections[0]
+        unit = lat_section.attrib["units"]
+        lat_texts = lat_section.text.split("\n")[1:-1]
+        lattice = np.array( [map(float,line.strip().split()) for line in lat_texts] )
+        volume  = np.dot(lattice[0],np.cross(lattice[1],lattice[2]))
+    elif len(lat_sections) > 1:
+        raise NotImplementedError("how to handle more than one lattice sections?")
+    else:
+        open_system = True # skipt lattice section, presumably for open system
+    # end if
     
     data = []
     loops = xml.xpath('//loop')
@@ -393,8 +401,10 @@ def scalars_from_input(qmcinput,extract = ["mean","error"],skip_failed=False):
         entry["path"] = os.path.dirname(scalar_file)
         entry["iqmc"] = iqmc
         entry["method"] = method
-        entry["volume"] = volume
-        entry["vol_unit"] = unit
+        if not open_system:
+            entry["volume"] = volume
+            entry["vol_unit"] = unit
+        # end if
 
         try:
             qa = DatAnalyzer(scalar_file,0)
