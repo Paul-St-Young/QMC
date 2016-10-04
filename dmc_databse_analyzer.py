@@ -88,13 +88,24 @@ def process_dmc_data_frame(df):
     dmc = df[ df["method"] == "dmc" ]
     extrap = get_better_observables(vmc,dmc)
     new_df = pd.concat([df,extrap]).reset_index().drop("index",axis=1)
-    new_df = pd.concat([new_df,new_df["settings"].apply(pd.Series)],axis=1).drop("settings",axis=1)
+    try:
+        new_df = pd.concat([new_df,new_df["settings"].apply(pd.Series)],axis=1).drop("settings",axis=1)
+    except:
+        pass
+    # end try
     return new_df
 # end def process_dmc_data_frame
 
 def sum_columns(cols_to_sum,df):
     columnv, columne = add_subfixes(cols_to_sum)
     new_mean  = df[columnv].apply(np.sum,axis=1)
+    new_error = df[columne].apply(lambda arr:np.sqrt(np.sum(arr**2.)),axis=1)
+    return new_mean,new_error
+# end def
+
+def mult_columns(cols_to_mult,df):
+    columnv, columne = add_subfixes(cols_to_mult)
+    new_mean  = df[columnv].apply(np.prod,axis=1)
     new_error = df[columne].apply(lambda arr:np.sqrt(np.sum(arr**2.)),axis=1)
     return new_mean,new_error
 # end def
