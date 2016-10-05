@@ -103,6 +103,14 @@ def sum_columns(cols_to_sum,df):
     return new_mean,new_error
 # end def
 
+def sub_columns(cols_to_sub,df):
+    columnv, columne = add_subfixes(cols_to_sub)
+    leftv,rightv = columnv
+    new_mean  = df[leftv] - df[rightv]
+    new_error = df[columne].apply(lambda arr:np.sqrt(np.sum(arr**2.)),axis=1)
+    return new_mean,new_error
+# end def
+
 def mult_columns(cols_to_mult,df):
     columnv, columne = add_subfixes(cols_to_mult)
     new_mean  = df[columnv].apply(np.prod,axis=1)
