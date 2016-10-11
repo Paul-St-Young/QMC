@@ -40,6 +40,39 @@ def find_observable_names(all_columns):
     return observable_names
 # end def find_observable_names
 
+import scipy.optimize as op
+def ts_extrap(mydf,method='linear',ts_name='timestep'
+    ,val_name='LocalEnergy_mean',err_name='LocalEnergy_error',estimate_error=True):
+    ts = mydf[ts_name].values
+    values = mydf[val_name].values
+    errors = mydf[err_name].values
+    
+    if method == 'linear':
+        def model(ts,a,b):
+            return a*ts+b
+        # end def
+    else:
+        raise NotImplementedError('unknown extrapolation method '+method)
+    # end if method
+    
+    popt,pcov = op.curve_fit(model,ts,values,sigma=errors,absolute_sigma=True)
+    perr = np.sqrt(np.diag(pcov))
+    fitted_model = lambda ts:model(ts,*popt)
+    
+    val0 = fitted_model(0)
+    err0 = 0.0
+    
+    if estimate_error:
+        if method == 'linear':
+            err0 = perr[1]
+        else:
+            raise NotImplementedError('how to estimate error with '+method)
+        # end if method
+    # end if
+    
+    return pd.Series({val_name:val0,err_name:err0})
+# end def
+
 def get_better_observables(one_vmc,some_dmcs,linear=True):
     """ extrapolate mixed estimators using a vmc run
       linear extrapolation: 2*DMC-VMC
