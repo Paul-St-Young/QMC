@@ -123,3 +123,13 @@ def retrieve_psig(h5_file,only_occupied=False,occupations=None):
     h5handle.close()
     return orbitals
 # end def retrieve_psig
+
+def retrieve_system(h5_file):
+    h5handle = h5py.File(h5_file)
+    lattice  = h5handle['supercell/primitive_vectors'].value
+    #elem     = h5handle['atoms/species_ids'].value # why so complicated?
+    pos      = h5handle['atoms/positions'].value
+    gvecs    = h5handle['electrons/kpoint_0/gvectors']
+    h5handle.close()
+    return {'axes':lattice,'pos':pos,'gvecs':gvecs}
+# end def
