@@ -129,7 +129,7 @@ def retrieve_system(h5_file):
     lattice  = h5handle['supercell/primitive_vectors'].value
     #elem     = h5handle['atoms/species_ids'].value # why so complicated?
     pos      = h5handle['atoms/positions'].value
-    gvecs    = h5handle['electrons/kpoint_0/gvectors']
+    gvecs    = h5handle['electrons/kpoint_0/gvectors'].value
     h5handle.close()
     return {'axes':lattice,'pos':pos,'gvecs':gvecs}
 # end def
