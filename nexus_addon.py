@@ -2,6 +2,16 @@ import numpy as np
 from mmap import mmap
 import os
 
+def nparr_to_list(some_dict):
+    for key,val in some_dict.iteritems():
+        if isinstance(val,dict):
+            nparr_to_list(val)
+        elif isinstance(val,np.ndarray):
+            val = list(val)
+        # end if
+    # end for
+# end def
+
 def parse_qmca_output(filename, mean_postfix = "_mean", err_postfix  = "_error"):
 
     path = os.path.dirname(filename)
@@ -324,7 +334,7 @@ from lxml import etree
 #QBase.options.transfer_from(options)
 
 import os
-def scalars_from_input(qmcinput,extract = ["mean","error"],skip_failed=False):
+def scalars_from_input(qmcinput,extract = ["mean","error"],skip_failed=False,igroup=-1):
     """ Look for calculations specified in qmcinput xml, analyze each scalar.dat file and return a dictionary of data. Need to specify equilibration length with:
     from qmca import QBase
     options = {"equilibration":"auto"}
@@ -396,6 +406,10 @@ def scalars_from_input(qmcinput,extract = ["mean","error"],skip_failed=False):
         else:
             prefix = proj_id
         # end if 'twistname'
+        if igroup != -1: # !!!! hack to analyzed bundled inputs
+            prefix = proj_id + ".g%s" % str(igroup).zfill(3)
+        # end if
+
         scalar_file = subdir + ".".join([prefix
             ,"s"+str(num_start+iqmc).zfill(3),"scalar","dat"]).strip("/")
         entry["path"] = os.path.dirname(scalar_file)
