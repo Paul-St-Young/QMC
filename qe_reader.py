@@ -133,3 +133,84 @@ def retrieve_system(h5_file):
     h5handle.close()
     return {'axes':lattice,'pos':pos,'gvecs':gvecs}
 # end def
+
+import subprocess as sp
+def find_pwscf_io(path,infile_subfix='-scf.in',outfile_subfix='.out',use_last=False):
+    # assuming there is only 1 pair of pw.x input and output in path
+    #  return the names of the input and output files
+    out = sp.check_output(['ls',path])
+    
+    infile  = ''
+    outfile = ''
+    
+    found_in  = False
+    found_out = False
+    for fname in out.split('\n')[:-1]:
+        if fname.endswith(infile_subfix):
+            if found_in and not use_last:
+                raise NotImplementedError('multiple inputs found in %s'%path)
+            # end if
+            infile   = fname
+            found_in = True
+        elif fname.endswith(outfile_subfix):
+            if found_out and not use_last:
+                raise NotImplementedError('multiple outputs found in %s'%path)
+            # end if
+            outfile   = fname
+            found_out = True
+        # end if
+    # end for fname
+    
+    if not found_in:
+        raise IOError('infile not found in %s'%path)
+    elif not found_out:
+        raise IOError('outfile not found in %s'%path)
+    # end if
+    
+    return infile,outfile
+# end def find_pwscf_io
+
+import reader
+def available_structures(vc_out,nstruct_max=100,ndim=3):
+    """ find all available structures in a vc-relax output """
+    out  = reader.SearchableFile(vc_out)
+
+    # local all structures 
+    struct_start = []
+    for istruct in range(nstruct_max):
+        idx = out.find('CELL_PARAMETERS (')
+
+        if idx == -1:
+            break
+        # end if
+
+        out.mm.seek(idx)
+        struct_start.append(idx)
+        
+        tag_line = out.mm.readline().decode('utf-8')
+        
+        unit = tag_line.split()[-1].strip('()')
+        if not np.isclose(float(unit),1):
+            raise NotImplementedError('unknown unit %s'%unit)
+        # end if
+    # end for
+
+    nstructs = len(struct_start)
+    
+    avail_structs = np.zeros([nstructs,ndim,ndim])
+    for istruct in range(nstructs):
+        start_idx = struct_start[istruct]
+        out.mm.seek(start_idx)
+        out.mm.readline()
+
+        axes_text = ''
+        for idim in range(ndim):
+            axes_text += out.mm.readline().decode('utf-8') 
+        # end for idim
+        axes_list = axes_text.split('\n')[:-1]
+        axes = np.array([ax.split() for ax in axes_list],dtype=float)
+
+        avail_structs[istruct,:,:] = axes
+    # end for istruct
+    return avail_structs
+# end def available_structures
