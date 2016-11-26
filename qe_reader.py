@@ -170,49 +170,107 @@ def find_pwscf_io(path,infile_subfix='-scf.in',outfile_subfix='.out',use_last=Fa
     return infile,outfile
 # end def find_pwscf_io
 
-import reader
-def available_structures(vc_out,nstruct_max=100,ndim=3):
-    """ find all available structures in a vc-relax output """
-    out  = reader.SearchableFile(vc_out)
-
-    # local all structures 
-    struct_start = []
-    for istruct in range(nstruct_max):
-        idx = out.find('CELL_PARAMETERS (')
-
+def all_lines_with_tag(mm,tag,nline_max):
+    """ return a list of memory indices pointing to the start of tag """
+    mm.seek(0) # rewind file
+    all_idx = []
+    for iline in range(nline_max):
+        idx = mm.find(tag)
         if idx == -1:
             break
         # end if
-
-        out.mm.seek(idx)
-        struct_start.append(idx)
-        
-        tag_line = out.mm.readline().decode('utf-8')
-        
-        unit = tag_line.split()[-1].strip('()')
-        if not np.isclose(float(unit),1):
-            raise NotImplementedError('unknown unit %s'%unit)
-        # end if
-    # end for
-
-    nstructs = len(struct_start)
+        mm.seek(idx)
+        all_idx.append(idx)
+        mm.readline()
+    # end for iline
     
-    avail_structs = np.zeros([nstructs,ndim,ndim])
-    for istruct in range(nstructs):
-        start_idx = struct_start[istruct]
-        out.mm.seek(start_idx)
-        out.mm.readline()
+    # guard
+    if iline >= nline_max-1:
+        raise NotImplementedError('may need to increase nline_max')
+    # end if
+    return all_idx
+# end def all_lines_with_tag
 
-        axes_text = ''
+def available_structures(pw_out,nstruct_max=100,natom_max=1000,ndim=3
+        ,variable_cell=False):
+    """ find all available structures in a pwscf output """
+    fhandle = open(pw_out,'r+')
+    mm = mmap(fhandle.fileno(),0)
+    
+    # locate all axes
+    axes_tag = 'CELL_PARAMETERS ('.encode()
+    axes_starts = all_lines_with_tag(mm,axes_tag,nstruct_max)
+    naxes = len(axes_starts)
+    if (naxes != 0) and (not variable_cell):
+        raise NotImplementedError('CELL_PARAMETERS found, are you sure this is not a variable cell run?')
+    # end if
+    
+    # locate all atomic cd positions
+    pos_tag    = 'ATOMIC_POSITIONS'.encode()
+    pos_starts = all_lines_with_tag(mm,pos_tag,nstruct_max)
+    npos = len(pos_starts)
+    
+    if variable_cell and (npos != naxes):
+        raise NotImplementedError('expect same number of cells as atomic positions in a variable cell calculation. got (naxes,npos)=(%d,%d)'%(naxes,npos))
+    # end if
+    
+    # count number of atoms
+    mm.seek(pos_starts[0])
+    mm.readline() # skip tag line
+    natom = 0
+    for iatom in range(natom_max):
+        line = mm.readline()
+        tokens = line.split()
+        if len(tokens) != 4:
+            break
+        # end if
+        natom += 1
+    # end for iatom
+    
+    # read initial crystal axes
+    axes = np.zeros([ndim,ndim])
+    if not variable_cell: 
+        idx = all_lines_with_tag(mm,'crystal axes'.encode(),nstruct_max)[0]
+        mm.seek(idx)
+        mm.readline()
         for idim in range(ndim):
-            axes_text += out.mm.readline().decode('utf-8') 
-        # end for idim
-        axes_list = axes_text.split('\n')[:-1]
-        axes = np.array([ax.split() for ax in axes_list],dtype=float)
-
-        avail_structs[istruct,:,:] = axes
+            line = mm.readline()
+            axes[idim,:] = line.split()[3:3+ndim]
+        # end for 
+    # end if
+    
+    nstructs = max(naxes,npos)
+    all_axes = np.zeros([nstructs,ndim,ndim])
+    all_pos  = np.zeros([nstructs,natom,ndim])
+    for istruct in range(nstructs):
+        
+        if variable_cell: # read cell parameters
+            cell_idx = axes_starts[istruct]
+            mm.seek(cell_idx)
+            mm.readline() # skip tag line
+            
+            axes_text = ''
+            for idim in range(ndim):
+                axes[idim,:] = mm.readline().split()
+            # end for idim
+        # end if variable_cell
+        
+        all_axes[istruct,:,:] = axes
+        
+        pos_idx = pos_starts[istruct]
+        mm.seek(pos_idx)
+        mm.readline() # skip tag line
+        
+        pos_text = ''
+        for iatom in range(natom):
+            line = mm.readline().decode('utf-8')
+            all_pos[istruct,iatom,:] = line.split()[1:]
+        # end for iatom
+        
     # end for istruct
-    return avail_structs
+        
+    fhandle.close()
+    return all_axes,all_pos
 # end def available_structures
 
 def md_traces(md_out,nstep):
