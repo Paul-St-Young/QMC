@@ -214,3 +214,66 @@ def available_structures(vc_out,nstruct_max=100,ndim=3):
     # end for istruct
     return avail_structs
 # end def available_structures
+
+def md_traces(md_out,nstep):
+    """ extract scalar traces from pwscf md output md_out 
+     look for tags defined in line_tag_map """
+    fhandle = open(md_out,'r+')
+    mm = mmap(fhandle.fileno(),0)
+
+    line_tag_map = { # unique identifier of the line that contains each key
+        'fermi energy':'the Fermi energy is',
+        'total energy':'!',
+        'kinetic energy':'kinetic energy',
+        'temperature':'temperature',
+        'econst':'Ekin + Etot'
+    }
+    val_idx_map  = {} # assume -2
+    val_type_map = {} # assume float
+
+    mm.seek(0)
+    data = []
+    for istep in range(nstep):
+        if mm.tell() >= mm.size():
+            break
+        # end if
+        found_stuff = False
+        
+        entry = {'istep':istep}
+        for label in line_tag_map.keys():
+            
+            # locate line with value for label
+            idx = mm.find(line_tag_map[label].encode())
+            if idx == -1:
+                continue
+            # end if
+            found_stuff = True
+            mm.seek(idx)
+            line = mm.readline()
+            
+            # locate value in line
+            rval_idx = -2 # assume patten "label = value unit"
+            if label in val_idx_map.keys():
+                rval_idx = val_idx_map[label]
+            # end if
+            rval = line.split()[rval_idx]
+            
+            # convert value
+            val_type = float
+            if label in val_type_map.keys():
+                val_type = val_type_map[key]
+            # end if
+            value = val_type(rval)
+            
+            entry[label] = value # !!!! assume float value
+        # end for
+        
+        if found_stuff:
+            data.append(entry)
+        else:
+            break
+        # end if
+    # end for istep
+    fhandle.close()
+    return data
+# end def md_traces# end def md_traces
