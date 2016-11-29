@@ -191,7 +191,8 @@ def all_lines_with_tag(mm,tag,nline_max):
     return all_idx
 # end def all_lines_with_tag
 
-def available_structures(pw_out,nstruct_max=100,natom_max=1000,ndim=3
+import struct
+def available_structures(pw_out,nstruct_max=2000,natom_max=1000,ndim=3
         ,variable_cell=False):
     """ find all available structures in a pwscf output """
     fhandle = open(pw_out,'r+')
@@ -261,10 +262,16 @@ def available_structures(pw_out,nstruct_max=100,natom_max=1000,ndim=3
         mm.seek(pos_idx)
         mm.readline() # skip tag line
         
-        pos_text = ''
         for iatom in range(natom):
-            line = mm.readline().decode('utf-8')
-            all_pos[istruct,iatom,:] = line.split()[1:]
+            line = mm.readline()
+            name = line.split()[0]
+            pos_text = line.strip(name)
+            try:
+                name,xpos,ypos,zpos = struct.unpack('4sx14sx14sx13s',pos_text)
+                all_pos[istruct,iatom,:] = [xpos,ypos,zpos]
+            except:
+                print 'failed to read (istruct,iatom)=(%d,%d)' % (istruct,iatom)
+            # end try
         # end for iatom
         
     # end for istruct

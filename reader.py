@@ -144,19 +144,19 @@ class SearchableFile:
     # end def
 
     def find(self,string):
-        idx = self.mm.find(string)
+        idx = self.mm.find(string.encode())
         return idx
     # end def
 
     def find_first(self,string):
         self.rewind()
-        idx = self.mm.find(string)
+        idx = self.mm.find(string.encode())
         return idx
     # end def
 
     def locate_block(self,header,trailer):
-        begin_idx = self.mm.find(header)
-        end_idx   = self.mm.find(trailer)
+        begin_idx = self.mm.find(header.encode())
+        end_idx   = self.mm.find(trailer.encode())
         return begin_idx,end_idx
     # end def
 
