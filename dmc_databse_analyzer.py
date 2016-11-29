@@ -99,8 +99,7 @@ def ts_extrap(mydf,col_name="LocalEnergy",order=1
     for col in preserve_columns:
         entry[col] = mydf.iloc[0][col]
     # end for
-    
-    return entry
+    return pd.DataFrame([entry])
 # end def ts_extrap
 
 def get_better_observables(one_vmc,some_dmcs,linear=True):
