@@ -2,12 +2,12 @@ import numpy as np
 from mmap import mmap
 import os
 
-def nparr_to_list(some_dict):
+def dict_nparr_to_list(some_dict):
     for key,val in some_dict.iteritems():
         if isinstance(val,dict):
-            nparr_to_list(val)
+            dict_nparr_to_list(val)
         elif isinstance(val,np.ndarray):
-            val = list(val)
+            some_dict[key] = val.tolist()
         # end if
     # end for
 # end def
@@ -403,6 +403,11 @@ def scalars_from_input(qmcinput,extract = ["mean","error"],skip_failed=False,igr
         # get scalar values
         if 'twistnum' in input_name: # !!!! hack to read in nexus-generated twist runs
             prefix = input_name[:input_name.find('twistnum')].strip('.')
+        elif 'twist' in input_name: # !!!! hack to read twist.g### etc.
+            tokens = input_name.split('.')
+            prefix = tokens[0]
+            group  = tokens[1]
+            prefix = '.'.join([prefix,group])
         else:
             prefix = proj_id
         # end if 'twistname'
