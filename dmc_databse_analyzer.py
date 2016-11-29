@@ -41,37 +41,67 @@ def find_observable_names(all_columns):
 # end def find_observable_names
 
 import scipy.optimize as op
-def ts_extrap(mydf,method='linear',ts_name='timestep'
-    ,val_name='LocalEnergy_mean',err_name='LocalEnergy_error',estimate_error=True):
-    ts = mydf[ts_name].values
-    values = mydf[val_name].values
-    errors = mydf[err_name].values
+def ts_extrap(mydf,col_name="LocalEnergy",order=1
+        ,ndmc_to_use=2,check_method=True):
+    """ performed timestep extrapolation on a dataframe of DMC calculations 
+    using 1st or 2nd order polynomial. 
+    required columns: iqmc, settings/timestep, col_name+nscheme.subfix_mean and col_name+nscheme.subfix_error """
     
-    if method == 'linear':
-        def model(ts,a,b):
-            return a*ts+b
-        # end def
-    else:
-        raise NotImplementedError('unknown extrapolation method '+method)
-    # end if method
-    
-    popt,pcov = op.curve_fit(model,ts,values,sigma=errors,absolute_sigma=True)
-    perr = np.sqrt(np.diag(pcov))
-    fitted_model = lambda ts:model(ts,*popt)
-    
-    val0 = fitted_model(0)
-    err0 = 0.0
-    
-    if estimate_error:
-        if method == 'linear':
-            err0 = perr[1]
-        else:
-            raise NotImplementedError('how to estimate error with '+method)
-        # end if method
+    # local dmc runs to use in extrapolation
+    last_dmc_idx = mydf.iqmc.max()
+    dmcdf = mydf[mydf['iqmc']>last_dmc_idx-ndmc_to_use]
+    all_dmc = np.all( dmcdf.method == 'dmc' )
+    if not all_dmc:
+        raise NotImplementedError('cannot use non-dmc calculations in time step extrapolation')
     # end if
     
-    return pd.Series({val_name:val0,err_name:err0})
-# end def
+    fitdf = dmcdf[
+        ['iqmc',col_name+nscheme.subfix_mean,col_name+nscheme.subfix_error,'settings']
+    ].copy()
+    
+    # decide on model
+    if order == 1:
+        model = lambda x,a,b:a*x+b
+    elif order == 2:
+        model = lambda x,a,b,c:a*x*x+b*x+c
+    else:
+        raise NotImplementedError('only linear and quadratic extrapolations are implemented')
+    # end if
+    
+    # check there is enough data
+    if len(fitdf) <= order-1:
+        raise NotImplementedError('insufficient data for order %d extrapolation'%order)
+    # end if
+    
+    # suss out data
+    mean_name = col_name+nscheme.subfix_mean
+    error_name= col_name+nscheme.subfix_error
+    myx = fitdf.apply(lambda x:x['settings']['timestep'],axis=1)
+    myy = fitdf[mean_name]
+    myye= fitdf[error_name]
+    
+    # perform fit
+    popt,pcov = op.curve_fit(model,myx,myy,sigma=myye,absolute_sigma=True)
+    perr = np.sqrt(np.diag(pcov))
+    
+    # get zero-time step value
+    val0 = model(0,*popt)
+    err0 = perr[-1]
+
+    # make new entry
+    entry = pd.Series({
+        'iqmc':-1,
+        'method':'ts_extrap',
+        mean_name:val0,
+        error_name:err0
+    })
+    preserve_columns = ['path','settings']
+    for col in preserve_columns:
+        entry[col] = mydf.iloc[0][col]
+    # end for
+    
+    return entry
+# end def ts_extrap
 
 def get_better_observables(one_vmc,some_dmcs,linear=True):
     """ extrapolate mixed estimators using a vmc run
@@ -120,7 +150,8 @@ def process_dmc_data_frame(df):
     vmc = df[ df["method"] == "vmc" ]
     dmc = df[ df["method"] == "dmc" ]
     extrap = get_better_observables(vmc,dmc)
-    new_df = pd.concat([df,extrap]).reset_index().drop("index",axis=1)
+    tsdf   = ts_extrap(df)
+    new_df = pd.concat([df,extrap,tsdf]).reset_index().drop("index",axis=1)
     try:
         new_df = pd.concat([new_df,new_df["settings"].apply(pd.Series)],axis=1).drop("settings",axis=1)
     except:
