@@ -374,6 +374,18 @@ def scalars_from_input(qmcinput,extract = ["mean","error"],skip_failed=False,igr
         calcs = xml.xpath("//qmc")
     # end if
 
+    # find twistnum if it exists
+    twistnum = -1
+    builders = xml.xpath('//sposet_builder[@type="bspline"]')
+    if (len(builders) == 0) and (not open_system):
+        raise IOError('failed to read sposet_builder')
+        # exempt with a flag if not using spline wavefunction
+    elif (len(builders)!=1):
+        raise NotImplementedError('found %d spline builders, can only handle 1'%len(builders))
+    else:
+        twistnum = builders[0].attrib['twistnum']
+    # end if
+
     for iqmc in range(len(calcs)):
 
         entry = {}
@@ -423,6 +435,7 @@ def scalars_from_input(qmcinput,extract = ["mean","error"],skip_failed=False,igr
         if not open_system:
             entry["volume"] = volume
             entry["vol_unit"] = unit
+            entry["twistnum"] = twistnum
         # end if
 
         try:

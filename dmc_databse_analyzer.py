@@ -89,6 +89,12 @@ def ts_extrap(mydf,col_name="LocalEnergy",order=1
     err0 = perr[-1]
 
     # make new entry
+    entry = mydf.iloc[0].copy()
+    entry['iqmc']     = -1
+    entry['method']   = 'ts_extrap'
+    entry[mean_name]  = val0
+    entry[error_name] = err0
+    """
     entry = pd.Series({
         'iqmc':-1,
         'method':'ts_extrap',
@@ -99,6 +105,7 @@ def ts_extrap(mydf,col_name="LocalEnergy",order=1
     for col in preserve_columns:
         entry[col] = mydf.iloc[0][col]
     # end for
+    """
     return pd.DataFrame([entry])
 # end def ts_extrap
 
