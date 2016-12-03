@@ -197,6 +197,11 @@ def available_structures(pw_out,nstruct_max=2000,natom_max=1000,ndim=3
     """ find all available structures in a pwscf output """
     fhandle = open(pw_out,'r+')
     mm = mmap(fhandle.fileno(),0)
+
+    idx = mm.find('lattice parameter')
+    mm.seek(idx)
+    lat_line = mm.readline()
+    alat = float( lat_line.split()[-2] )
     
     # locate all axes
     axes_tag = 'CELL_PARAMETERS ('.encode()
@@ -233,13 +238,21 @@ def available_structures(pw_out,nstruct_max=2000,natom_max=1000,ndim=3
     if not variable_cell: 
         idx = all_lines_with_tag(mm,'crystal axes'.encode(),nstruct_max)[0]
         mm.seek(idx)
-        mm.readline()
+        tag_line = mm.readline()
+        unit_text= tag_line.split()[-1].strip('()')
         for idim in range(ndim):
             line = mm.readline()
             axes[idim,:] = line.split()[3:3+ndim]
+            if 'alat' in unit_text:
+                axes[idim,:] *= alat
+            else:
+                raise NotImplementedError('crystal axes: what unit is %s?'%unit_text)
+            # end if
         # end for 
     # end if
     
+    bohr = 0.52917721067 # angstrom (CODATA 2014)
+    angstrom = False # assume bohr
     nstructs = max(naxes,npos)
     all_axes = np.zeros([nstructs,ndim,ndim])
     all_pos  = np.zeros([nstructs,natom,ndim])
@@ -260,7 +273,15 @@ def available_structures(pw_out,nstruct_max=2000,natom_max=1000,ndim=3
         
         pos_idx = pos_starts[istruct]
         mm.seek(pos_idx)
-        mm.readline() # skip tag line
+        tag_line = mm.readline()
+        unit_text= tag_line.split()[-1]
+        if 'angstrom' in unit_text:
+            angstrom = True
+        elif 'crystal' in unit_text:
+            raise NotImplementedError('crsytal units')
+        else:
+            raise NotImplementedError('what unit is this? %s' % unit_text)
+        # end if
         
         for iatom in range(natom):
             line = mm.readline()
@@ -269,6 +290,8 @@ def available_structures(pw_out,nstruct_max=2000,natom_max=1000,ndim=3
             try:
                 name,xpos,ypos,zpos = struct.unpack('4sx14sx14sx13s',pos_text)
                 all_pos[istruct,iatom,:] = [xpos,ypos,zpos]
+                if angstrom:
+                    all_pos[istruct,iatom,:] /= bohr
             except:
                 print 'failed to read (istruct,iatom)=(%d,%d)' % (istruct,iatom)
             # end try
@@ -280,7 +303,7 @@ def available_structures(pw_out,nstruct_max=2000,natom_max=1000,ndim=3
     return all_axes,all_pos
 # end def available_structures
 
-def md_traces(md_out,nstep):
+def md_traces(md_out,nstep=2000):
     """ extract scalar traces from pwscf md output md_out 
      look for tags defined in line_tag_map """
     fhandle = open(md_out,'r+')
@@ -339,6 +362,9 @@ def md_traces(md_out,nstep):
             break
         # end if
     # end for istep
+    if istep >= nstep-1:
+        print "WARNING: %d structures found, nstep may need to be increased" %istep
+    # end if
     fhandle.close()
     return data
 # end def md_traces# end def md_traces
