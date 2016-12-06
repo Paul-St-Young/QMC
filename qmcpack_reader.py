@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from mmap import mmap
-def get_madelung(qmcout,keyword='Madelung',val_type=float,val_loc=-1):
+def get_value(qmcout,keyword='Madelung',val_type=float,val_loc=-1):
     """ find the value of the line 'keyword = value' in qmcout """
     
     # open file
