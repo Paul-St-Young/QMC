@@ -2,7 +2,7 @@
 import h5py
 import numpy as np
 
-def grab_stat_entries(stat_file_name,name):
+def grab_stat_entries(stat_file_name,name,exact_name=False):
     """ stat_file_name: .stat.h5 file name, name: ex. gofr """
     stat_file = h5py.File(stat_file_name)
     
@@ -10,6 +10,9 @@ def grab_stat_entries(stat_file_name,name):
     # find each entry and extract data
     for estimator in stat_file.keys():
         if estimator.startswith(name):
+            if exact_name and estimator != name:
+                continue
+            # end if
             entry = {"name":estimator}
             for key,value in stat_file[estimator].iteritems():
                 entry[key] = value[:]
@@ -74,14 +77,14 @@ def dft_orbital(fhandle,ik,ibnd,nx=0):
 # end def
 
 import pandas as pd
-def raw_stats(stat_files,observable):
+def raw_stats(stat_files,observable,exact_name=False):
     """ given a list of files, save all raw data related to observable """
 
     data = []
     twistnum = 0 # !!!! need better way to determine twistnum
     # does not matter if twistnum never used
     for fname in stat_files:
-        mydf = pd.DataFrame( grab_stat_entries(fname,observable) )
+        mydf = pd.DataFrame( grab_stat_entries(fname,observable,exact_name) )
         mydf['twistnum'] = twistnum
         twistnum += 1
         data.append(mydf)
@@ -145,7 +148,8 @@ def equil_spectrum(matrix_data,nequil,warn=True):
 # end def equil_spectrum
 
 import os
-def analyze_stat_h5s(stat_files,nequil,prefix,mat_entries = {
+def analyze_stat_h5s(stat_files,nequil,prefix,exact_name=False
+    ,mat_entries = {
     'gofr':['value','value_squared'],
     'sk':['value','value_squared','kpoints']
 }):
@@ -167,7 +171,7 @@ def analyze_stat_h5s(stat_files,nequil,prefix,mat_entries = {
         # end if
 
         # load raw data
-        df = raw_stats(stat_files,observable)
+        df = raw_stats(stat_files,observable,exact_name=exact_name)
 
         # average over twists
         avg_df = avg_twists(df,mat_entries[observable])
@@ -233,23 +237,44 @@ def find_stat_h5_by_series(path,iseries,igroup=0):
 
 if __name__ == '__main__':
     import argparse
-    parser = argparse.ArgumentParser(description='analyze g(r) and S(k) and plot if asked')
+    parser = argparse.ArgumentParser(description='analyze g(r) and S(k) and plot if asked. QMCPACK stat.h5 files must be available in given path.')
+    parser.add_argument('path',type=str,help='path to QMCPACK run directory')
     parser.add_argument('-is','--iseries',type=int,default=2,help='series index 1 -> s001')
+    parser.add_argument('-exact','--use_exact_name',action='store_true',help='only collect observable with the exact name given. Default is to use name.startswith(name_given).')
     parser.add_argument('-eq','--nequil',type=int,default=5,help='number of equilibration steps')
     parser.add_argument('-psk','--plot_sk',action='store_true',help='plot S(k)')
     parser.add_argument('-pgr','--plot_gr',action='store_true',help='plot g(r)')
     parser.add_argument('--gr_name',type=str,default='gofr_e_0_1',help='plot g(r)')
+    parser.add_argument('-nogr','--no_gr',action='store_true',help='do not collect g(r)')
+    parser.add_argument('-nosk','--no_sk',action='store_true',help='do not collect S(k)')
     args = parser.parse_args()
     
+    qmc_path= args.path
     iseries = args.iseries
     nequil  = args.nequil
     plot_sk = args.plot_sk
     plot_gr = args.plot_gr
     gr_name = args.gr_name
+    exact_name = args.use_exact_name
 
-    stat_files = find_stat_h5_by_series('.',iseries)
-    prefix = '.'.join(stat_files[0].split('.')[:-2])+'.equil%d'%nequil
-    analyze_stat_h5s(stat_files,nequil,prefix)
+    stat_files = find_stat_h5_by_series(qmc_path,iseries)
+    print "found %d stat.h5 files in %s" % (len(stat_files),qmc_path)
+    prefix = stat_files[0].split('.')[0]+'.equil%d'%nequil
+
+    mat_entries = {
+        'gofr':['value','value_squared'],
+        'sk':['value','value_squared','kpoints']
+    }
+    if args.no_sk:
+        mat_entries.pop('sk')
+    elif argsno_gr:
+        mat_entries.pop('gofr')
+    # end if
+
+    stat_file_locs = [os.path.join(qmc_path,fname) for fname in stat_files]
+    analyze_stat_h5s(stat_file_locs,nequil,prefix,exact_name=exact_name
+        ,mat_entries = mat_entries)
+        #,mat_entries = {'sk':['kpoints','value','value_squared']})
 
     if plot_sk:
         import matplotlib.pyplot as plt
