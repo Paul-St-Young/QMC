@@ -107,7 +107,9 @@ def avg_twists(raw_df,mat_entries=['value'],drop_columns=[],skip_array=False):
     # end if
     
     mat_avg = lambda x:np.mean(x,axis=0)
-    avg_df = pd.DataFrame( raw_df.groupby('name')[mat_entries[0]].apply(mat_avg) )
+    groups2avg = raw_df.groupby('name')[mat_entries[0]]
+
+    avg_df = pd.DataFrame( groups2avg.apply(mat_avg) )
     for col_name in mat_entries[1:]:
         avg_df[col_name] = raw_df.groupby('name')[col_name].apply(mat_avg)
     # end for col_name
@@ -258,7 +260,11 @@ if __name__ == '__main__':
     exact_name = args.use_exact_name
 
     stat_files = find_stat_h5_by_series(qmc_path,iseries)
-    print "found %d stat.h5 files in %s" % (len(stat_files),qmc_path)
+    nfile = len(stat_files)
+    print "found %d stat.h5 files in %s" % (nfile,qmc_path)
+    if (nfile<=0):
+        raise RuntimeError('no file to read')
+    # end if
     prefix = stat_files[0].split('.')[0]+'.equil%d'%nequil
 
     mat_entries = {
