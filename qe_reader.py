@@ -1,6 +1,78 @@
 import numpy as np
 from mmap import mmap
 
+def value_by_label_sep_pos(mm,label,sep=b'=',pos=-1,dtype=float,from_start=False):
+    """ find the value of the line 'keyword = value' in memory map 'mm' by default """
+    
+    if from_start:
+        mm.seek(0)
+    # end if
+    
+    # accomodate python3
+    if type(label) is str:
+        label = label.encode()
+    elif type(sep) is str:
+        sep = label.encode()
+    # end if
+    
+    idx = mm.find(label)
+    if idx == -1:
+        raise RuntimeError(label+' not found')
+    # end if
+    
+    mm.seek(idx)
+    line = mm.readline()
+    tokens = line.split(sep)
+    
+    val_text = tokens[pos]
+    val = dtype(val_text)
+    return val
+
+# end def value_by_label_sep_pos
+
+def read_forces(scf_out,ndim=3):
+    """ read the forces in a pwscf output, assume only one force block """
+
+    fhandle = open(scf_out,'r+')
+    mm = mmap(fhandle.fileno(),0)
+    
+    natom = value_by_label_sep_pos(mm,'number of atoms',dtype=int)
+    
+    # locate force block
+    begin_tag = 'Forces acting on atoms'
+    end_tag   = 'The non-local contrib.  to forces'
+
+    begin_idx = mm.find(begin_tag.encode())
+    end_idx   = mm.find(end_tag.encode())
+    if begin_idx == -1:
+        raise RuntimeError('cannot locate %s'%begin_tag)
+    elif end_idx == -1:
+        raise RuntimeError('cannot locate %s'%end_tag)
+    # end if
+    force_block = mm[begin_idx:end_idx]
+    
+    # parse force block for forces
+    forces = np.zeros([natom,ndim])
+    iatom = 0
+    for line in force_block.split(b'\n'):
+        if line.strip().startswith(b'atom'):
+            tokens = line.split()
+            if len(tokens)==9: # found an atom
+                myforce = np.array(tokens[-3:],dtype=float)
+                forces[iatom,:] = tokens[-3:]
+                iatom += 1
+            # end if
+        # end if
+    # end for
+    if iatom != natom:
+        raise RuntimeError('found %d forces for %d atoms'%(iatom,natom))
+    # end if
+    
+    fhandle.close()
+    
+    return forces
+# end def
+
 def retrieve_occupations(nscf_outfile, max_nbnd_lines=10):
     """ read the eigenvalues and occupations of DFT orbitals at every available kpoint in an non-scf output produced by pwscf """ 
 
@@ -368,3 +440,4 @@ def md_traces(md_out,nstep=2000):
     fhandle.close()
     return data
 # end def md_traces# end def md_traces
+

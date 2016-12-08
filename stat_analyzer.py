@@ -273,7 +273,7 @@ if __name__ == '__main__':
     }
     if args.no_sk:
         mat_entries.pop('sk')
-    elif argsno_gr:
+    elif args.no_gr:
         mat_entries.pop('gofr')
     # end if
 
