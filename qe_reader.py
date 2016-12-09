@@ -30,8 +30,30 @@ def value_by_label_sep_pos(mm,label,sep=b'=',pos=-1,dtype=float,from_start=False
 
 # end def value_by_label_sep_pos
 
-def read_forces(scf_out,ndim=3):
-    """ read the forces in a pwscf output, assume only one force block """
+def read_forces(scf_out,ndim=3,which='local'):
+    """ read the forces in a pwscf output, assume only one force block
+     'which' decides which block of forces to read, choices are:
+         ['total', 'non-local', 'local', 'ionic', 'core', 'Hubbard', 'scf']
+     !!!! assuming QE uses Ry, will convert to Ha """
+    Ry = 0.5 # Ha
+    begin_tag_dict = {
+        'total':'Forces acting on atoms',
+        'non-local':'The non-local contrib.  to forces',
+        'ionic':'The ionic contribution  to forces',
+        'local':'The local contribution  to forces',
+        'core':'The core correction contribution to forces',
+        'Hubbard':'The Hubbard contrib.    to forces',
+        'scf':'The SCF correction term to forces'
+    }
+    end_tag_dict = {
+        'total':'The non-local contrib.  to forces',
+        'non-local':'The ionic contribution  to forces',
+        'ionic':'The local contribution  to forces',
+        'local':'The core correction contribution to forces',
+        'core':'The Hubbard contrib.    to forces',
+        'Hubbard':'The SCF correction term to forces',
+        'scf':'Total force ='
+    }
 
     fhandle = open(scf_out,'r+')
     mm = mmap(fhandle.fileno(),0)
@@ -39,8 +61,8 @@ def read_forces(scf_out,ndim=3):
     natom = value_by_label_sep_pos(mm,'number of atoms',dtype=int)
     
     # locate force block
-    begin_tag = 'Forces acting on atoms'
-    end_tag   = 'The non-local contrib.  to forces'
+    begin_tag = begin_tag_dict[which]
+    end_tag   = end_tag_dict[which]
 
     begin_idx = mm.find(begin_tag.encode())
     end_idx   = mm.find(end_tag.encode())
@@ -70,7 +92,7 @@ def read_forces(scf_out,ndim=3):
     
     fhandle.close()
     
-    return forces
+    return forces*Ry
 # end def
 
 def retrieve_occupations(nscf_outfile, max_nbnd_lines=10):
