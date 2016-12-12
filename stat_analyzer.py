@@ -267,6 +267,8 @@ if __name__ == '__main__':
     parser.add_argument('--gr_name',type=str,default='gofr_e_0_1',help='plot g(r)')
     parser.add_argument('-nogr','--no_gr',action='store_true',help='do not collect g(r)')
     parser.add_argument('-nosk','--no_sk',action='store_true',help='do not collect S(k)')
+    parser.add_argument('-skipa','--skip_analysis',action='store_true',help='skip analysis, allow plotting if the desired json file already exists')
+    parser.add_argument('-pre','--prefix',type=str,default=None,help='e.g. to plot myrun_gofr.json, use -pre myrun -skipa')
     args = parser.parse_args()
     
     qmc_path= args.path
@@ -277,29 +279,41 @@ if __name__ == '__main__':
     gr_name = args.gr_name
     exact_name = args.use_exact_name
 
-    stat_files = find_stat_h5_by_series(qmc_path,iseries)
-    nfile = len(stat_files)
-    print "found %d stat.h5 files in %s" % (nfile,qmc_path)
-    if (nfile<=0):
-        raise RuntimeError('no file to read')
-    # end if
-    prefix = stat_files[0].split('.')[0]+'.equil%d'%nequil
+    # this analysis block generates 'prefix_sk.json'
+    if not args.skip_analysis:
 
-    mat_entries = {
-        'gofr':['value','value_squared'],
-        'sk':['value','value_squared','kpoints'],
-        #'skc':['value','value_squared','kpoints']
-    }
-    if args.no_sk:
-        mat_entries.pop('sk')
-    elif args.no_gr:
-        mat_entries.pop('gofr')
+        stat_files = find_stat_h5_by_series(qmc_path,iseries)
+        nfile = len(stat_files)
+        print "found %d stat.h5 files in %s" % (nfile,qmc_path)
+        if (nfile<=0):
+            raise RuntimeError('no file to read')
+        # end if
+        prefix = stat_files[0].split('.')[0]+'.equil%d'%nequil
+
+        mat_entries = {
+            'gofr':['value','value_squared'],
+            'sk':['value','value_squared','kpoints'],
+            #'skc':['value','value_squared','kpoints']
+        }
+        if args.no_sk:
+            mat_entries.pop('sk')
+        elif args.no_gr:
+            mat_entries.pop('gofr')
+        # end if
+
+        stat_file_locs = [os.path.join(qmc_path,fname) for fname in stat_files]
+        analyze_stat_h5s(stat_file_locs,nequil,prefix,exact_name=exact_name
+            ,mat_entries = mat_entries)
+            #,mat_entries = {'sk':['kpoints','value','value_squared']})
+
     # end if
 
-    stat_file_locs = [os.path.join(qmc_path,fname) for fname in stat_files]
-    analyze_stat_h5s(stat_file_locs,nequil,prefix,exact_name=exact_name
-        ,mat_entries = mat_entries)
-        #,mat_entries = {'sk':['kpoints','value','value_squared']})
+    if args.skip_analysis:
+        prefix = args.prefix
+        if prefix is None:
+            raise RuntimeError('must provide prefix if analysis is skipped')
+        # end if
+    # end if
 
     if plot_sk:
         import matplotlib.pyplot as plt
