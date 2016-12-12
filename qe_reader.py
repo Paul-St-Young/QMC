@@ -371,6 +371,8 @@ def available_structures(pw_out,nstruct_max=2000,natom_max=1000,ndim=3
         unit_text= tag_line.split()[-1]
         if 'angstrom' in unit_text:
             angstrom = True
+        elif 'bohr' in unit_text:
+            angstrom = False
         elif 'crystal' in unit_text:
             raise NotImplementedError('crsytal units')
         else:
@@ -386,6 +388,7 @@ def available_structures(pw_out,nstruct_max=2000,natom_max=1000,ndim=3
                 all_pos[istruct,iatom,:] = [xpos,ypos,zpos]
                 if angstrom:
                     all_pos[istruct,iatom,:] /= bohr
+                # end if
             except:
                 print 'failed to read (istruct,iatom)=(%d,%d)' % (istruct,iatom)
             # end try

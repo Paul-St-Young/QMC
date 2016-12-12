@@ -269,7 +269,8 @@ if __name__ == '__main__':
 
     mat_entries = {
         'gofr':['value','value_squared'],
-        'sk':['value','value_squared','kpoints']
+        'sk':['value','value_squared','kpoints'],
+        #'skc':['value','value_squared','kpoints']
     }
     if args.no_sk:
         mat_entries.pop('sk')

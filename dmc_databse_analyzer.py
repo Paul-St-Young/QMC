@@ -299,3 +299,17 @@ def static_dynamic_energetics_table(vde_table
     
     return vde_table
 # end def
+
+def to_energy_pl_fmt(me_df):
+    """ output contents of me_df to a string in energy.pl (from QMCPACK) format
+     me_df should have variable names as index, and a 'mean' and an 'error' column """
+    out = ''
+    line_fmt = '{name:21s} = {mean:16.4f} +- {error:16.4f}\n'
+    for name,vals in me_df.iterrows():
+        mean = vals['mean']
+        error= vals['error']
+        line = line_fmt.format(**{'name':name,'mean':mean,'error':error})
+        out += line
+    # end for name
+    return out
+# end def
