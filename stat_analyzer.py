@@ -92,7 +92,7 @@ def raw_stats(stat_files,observable,exact_name=False):
     if len(data) == 0:
         raise NotImplementedError('no observable %s found in %s etc.' % (observable,stat_files[0]))
     # end if
-    df = pd.concat(data)
+    df = pd.concat(data).reset_index(drop=True)
     
     return df
 # end def raw_stats
@@ -105,18 +105,20 @@ def avg_twists(raw_df,mat_entries=['value'],drop_columns=[],skip_array=False):
     if len(mat_entries) == 0:
         raise NotImplementedError('must provide at least one column to average.')
     # end if
-    
-    mat_avg = lambda x:np.mean(x,axis=0)
-    groups2avg = raw_df.groupby('name')[mat_entries[0]]
 
+    mat_avg = lambda x:np.mean(x,axis=0)
+
+    # generate average dataframe using the first column
+    groups2avg = raw_df.groupby('name')[mat_entries[0]]
     avg_df = pd.DataFrame( groups2avg.apply(mat_avg) )
+
+    # generate the rest of the columns
     for col_name in mat_entries[1:]:
         avg_df[col_name] = raw_df.groupby('name')[col_name].apply(mat_avg)
     # end for col_name
     
-    default_drops = ['name','twistnum']
-    
     # get others parameters, which are assumed to be same across twists
+    default_drops = ['name','twistnum']
     params = raw_df.iloc[0].drop(default_drops+mat_entries+drop_columns).to_dict()
     
     for key,val in params.iteritems():
@@ -150,7 +152,7 @@ def equil_spectrum(matrix_data,nequil,warn=True):
 # end def equil_spectrum
 
 import os
-def analyze_stat_h5s(stat_files,nequil,prefix,exact_name=False
+def analyze_stat_h5s(stat_files,nequil,prefix,exact_name=False,warn=True
     ,mat_entries = {
     'gofr':['value','value_squared'],
     'sk':['value','value_squared','kpoints']
@@ -174,6 +176,22 @@ def analyze_stat_h5s(stat_files,nequil,prefix,exact_name=False
 
         # load raw data
         df = raw_stats(stat_files,observable,exact_name=exact_name)
+
+        # check if some twists have missing blocks
+        df['nblock'] = df[mat_entries[observable][0]].apply(lambda x:x.shape[0])
+        minb = min(df['nblock'])
+        maxb = max(df['nblock'])
+        if minb != maxb:
+            if warn:
+                print " only using %d blocks for %s from %s" % (minb,observable,os.path.dirname(stat_files[0]))
+            # end if
+            for col in df: # !!!! assume only column with names * need to be averaged
+
+                if col.startswith('value'):
+                    df.loc[:,col] = df[col].apply(lambda x:x[:minb])
+                # end if
+            # end for
+        # end if
 
         # average over twists
         avg_df = avg_twists(df,mat_entries[observable])
