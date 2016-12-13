@@ -313,3 +313,25 @@ def to_energy_pl_fmt(me_df):
     # end for name
     return out
 # end def
+
+def obs_df_from_entry(entry_in,prefix,drop_cols=[]):
+    """ take a QMCPACK spectrum observable from a single pandas entry, turn it into a full-fledged database for analysis and plotting.
+      entry_in: e.g. df.iloc[0] 
+      prefix: e.g. 'force'
+      drop_cols: e.g. 'force', b/c 'force_mean' is currently 0.0 """
+
+    # find all columns 
+    col_names  = [col for col in entry_in.index if col.startswith(prefix)]
+    mean_names = [col for col in col_names if col.endswith(nscheme.subfix_mean)]
+    error_names= [col for col in col_names if col.endswith(nscheme.subfix_error)]
+    names = [col.replace(nscheme.subfix_mean,'') for col in mean_names]
+    
+    entry = entry_in[col_names]
+    obs_df = pd.DataFrame(index=names,columns=['mean']
+        ,data=entry[mean_names].values)
+    obs_df['error'] = entry[error_names].values
+    obs_df = obs_df.drop(drop_cols).reset_index()
+    obs_df = obs_df.rename(columns={'index':'name'})
+    
+    return obs_df
+# end def 
