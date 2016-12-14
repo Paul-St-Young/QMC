@@ -259,7 +259,7 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='analyze g(r) and S(k) and plot if asked. QMCPACK stat.h5 files must be available in given path.')
     parser.add_argument('path',type=str,help='path to QMCPACK run directory')
-    parser.add_argument('-is','--iseries',type=int,default=2,help='series index 1 -> s001')
+    parser.add_argument('-is','--iseries',type=int,default=2,help='series index 2 -> s002')
     parser.add_argument('-exact','--use_exact_name',action='store_true',help='only collect observable with the exact name given. Default is to use name.startswith(name_given).')
     parser.add_argument('-eq','--nequil',type=int,default=5,help='number of equilibration steps')
     parser.add_argument('-psk','--plot_sk',action='store_true',help='plot S(k)')
