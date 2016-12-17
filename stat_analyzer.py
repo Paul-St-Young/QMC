@@ -76,6 +76,52 @@ def dft_orbital(fhandle,ik,ibnd,nx=0):
     return x,orbr
 # end def
 
+def show_sk(sk_json):
+    import matplotlib.pyplot as plt
+
+    # analyze S(k)
+    sk_df = pd.read_json(sk_json)
+    kvecs = sk_df['kpoints'][0]
+    sk_arr= np.array(sk_df['value'][0])
+
+    kmags = np.linalg.norm(kvecs,axis=1)
+    # average S(k) if multiple k-vectors have the same magnitude
+    unique_kmags = np.unique(kmags)
+    unique_sk    = np.zeros(len(unique_kmags))
+    for iukmag in range(len(unique_kmags)):
+        kmag    = unique_kmags[iukmag]
+        idx2avg = np.where(kmags==kmag)
+        unique_sk[iukmag] = np.mean(sk_arr[idx2avg])
+    # end for iukmag
+
+    # plot S(k)
+    fig,ax = plt.subplots(1,1)
+    ax.set_xlabel('k')
+    ax.set_ylabel('S(k)')
+    ax.plot(unique_kmags,unique_sk)
+    plt.show()
+# end def show_sk
+
+def show_gr(gr_json):
+    import matplotlib.pyplot as plt
+    # analyze g(r)
+    gr_df = pd.read_json(gr_json)
+    mydf = gr_df[gr_df['name'] == gr_name]
+    rmax = mydf['cutoff'][1]
+    dr   = mydf['delta'][1] # never used, save for debug
+
+    myy = mydf['value'][1]
+    myx = np.linspace(0,rmax,len(myy))
+
+    # plot g(r)
+    fig,ax = plt.subplots(1,1)
+    ax.set_xlabel('r (bohr)')
+    ax.set_ylabel(gr_name+'(r)')
+    ax.plot(myx,myy)
+    plt.show()
+# end def show_gr
+
+
 import pandas as pd
 def raw_stats(stat_files,observable,exact_name=False):
     """ given a list of files, save all raw data related to observable """
@@ -321,48 +367,12 @@ if __name__ == '__main__':
     # end if
 
     if plot_sk:
-        import matplotlib.pyplot as plt
-
-        # analyze S(k)
-        sk_df = pd.read_json(prefix+'_sk.json')
-        kvecs = sk_df['kpoints'][0]
-        sk_arr= np.array(sk_df['value'][0])
-
-        kmags = np.linalg.norm(kvecs,axis=1)
-        # average S(k) if multiple k-vectors have the same magnitude
-        unique_kmags = np.unique(kmags)
-        unique_sk    = np.zeros(len(unique_kmags))
-        for iukmag in range(len(unique_kmags)):
-            kmag    = unique_kmags[iukmag]
-            idx2avg = np.where(kmags==kmag)
-            unique_sk[iukmag] = np.mean(sk_arr[idx2avg])
-        # end for iukmag
-
-        # plot S(k)
-        fig,ax = plt.subplots(1,1)
-        ax.set_xlabel('k')
-        ax.set_ylabel('S(k)')
-        ax.plot(unique_kmags,unique_sk)
-        plt.show()
+        sk_json = prefix+'_sk.json'
+        show_sk(sk_json)
     # end if plot
 
     if plot_gr:
-        import matplotlib.pyplot as plt
-
-        # analyze g(r)
-        gr_df = pd.read_json(prefix+'_gofr.json')
-        mydf = gr_df[gr_df['name'] == gr_name]
-        rmax = mydf['cutoff'][1]
-        dr   = mydf['delta'][1] # never used, save for debug
-
-        myy = mydf['value'][1]
-        myx = np.linspace(0,rmax,len(myy))
-
-        # plot g(r)
-        fig,ax = plt.subplots(1,1)
-        ax.set_xlabel('r (bohr)')
-        ax.set_ylabel(gr_name+'(r)')
-        ax.plot(myx,myy)
-        plt.show()
+        gr_json = prefix+'_gofr.json'
+        show_gr(gr_json)
     # end if plot_gr
 # end __main__

@@ -36,7 +36,7 @@ class scalar_analyzer:
             # save each column of data under its header
             df[header[i]] = data[i]
         # end for i
-        df = df.drop("index",axis=1)
+        #df = df.drop("index",axis=1)
         
         # save DataFrame object
         self.dataframe  = df
