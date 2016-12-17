@@ -175,6 +175,9 @@ def analyze_stat_h5s(stat_files,nequil,prefix,exact_name=False,warn=True
         # end if
 
         # load raw data
+        if observable == 'sk': # !!!! hack
+            exact_name = True # not skinetic!
+        # end if
         df = raw_stats(stat_files,observable,exact_name=exact_name)
 
         # check if some twists have missing blocks
@@ -287,6 +290,8 @@ if __name__ == '__main__':
         print "found %d stat.h5 files in %s" % (nfile,qmc_path)
         if (nfile<=0):
             raise RuntimeError('no file to read')
+        elif (nfile==1):
+            print stat_files[0] # show file if few
         # end if
         prefix = stat_files[0].split('.')[0]+'.equil%d'%nequil
 
