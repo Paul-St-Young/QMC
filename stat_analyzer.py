@@ -107,10 +107,13 @@ def show_gr(gr_json):
     # analyze g(r)
     gr_df = pd.read_json(gr_json)
     mydf = gr_df[gr_df['name'] == gr_name]
-    rmax = mydf['cutoff'][1]
-    dr   = mydf['delta'][1] # never used, save for debug
+    if len(mydf) != 1:
+        raise RuntimeError('found %d entries with name %s, expected 1' %(len(mydf),gr_name))
+    # end if
+    rmax = mydf['cutoff'].iloc[0]
+    dr   = mydf['delta'].iloc[0] # never used, save for debug
 
-    myy = mydf['value'][1]
+    myy = mydf['value'].iloc[0]
     myx = np.linspace(0,rmax,len(myy))
 
     # plot g(r)
