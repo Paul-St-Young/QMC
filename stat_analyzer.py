@@ -225,9 +225,10 @@ def analyze_stat_h5s(stat_files,nequil,prefix,exact_name=False,warn=True
 
         # load raw data
         if observable == 'sk': # !!!! hack
-            exact_name = True # not skinetic!
+            df = raw_stats(stat_files,observable,exact_name=True)
+        else:
+            df = raw_stats(stat_files,observable,exact_name=exact_name)
         # end if
-        df = raw_stats(stat_files,observable,exact_name=exact_name)
 
         # check if some twists have missing blocks
         df['nblock'] = df[mat_entries[observable][0]].apply(lambda x:x.shape[0])

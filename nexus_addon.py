@@ -369,7 +369,7 @@ def scalars_from_input(qmcinput,extract = ["mean","error"],skip_failed=False,igr
     data = []
     loops = xml.xpath('//loop')
     if len(loops) != 0:
-        calcs = [qmc for loop in loops for qmc in loop.xpath('//qmc') for i in range(int(loop.attrib['max']))]
+        calcs = [qmc for loop in loops for qmc in loop.xpath('./qmc') for i in range(int(loop.attrib['max']))]
     else:
         calcs = xml.xpath("//qmc")
     # end if

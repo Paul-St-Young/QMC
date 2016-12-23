@@ -304,7 +304,7 @@ def to_energy_pl_fmt(me_df):
     """ output contents of me_df to a string in energy.pl (from QMCPACK) format
      me_df should have variable names as index, and a 'mean' and an 'error' column """
     out = ''
-    line_fmt = '{name:21s} = {mean:16.4f} +- {error:16.4f}\n'
+    line_fmt = '{name:21s} = {mean:16.4f} +/- {error:16.4f}\n'
     for name,vals in me_df.iterrows():
         mean = vals['mean']
         error= vals['error']
@@ -314,7 +314,7 @@ def to_energy_pl_fmt(me_df):
     return out
 # end def
 
-def obs_df_from_entry(entry_in,prefix,drop_cols=[]):
+def obs_df_from_entry(entry_in,prefix,drop_cols=[],dtype=float):
     """ take a QMCPACK spectrum observable from a single pandas entry, turn it into a full-fledged database for analysis and plotting.
       entry_in: e.g. df.iloc[0] 
       prefix: e.g. 'force'
@@ -328,8 +328,8 @@ def obs_df_from_entry(entry_in,prefix,drop_cols=[]):
     
     entry = entry_in[col_names]
     obs_df = pd.DataFrame(index=names,columns=['mean']
-        ,data=entry[mean_names].values)
-    obs_df['error'] = entry[error_names].values
+        ,data=entry[mean_names].values,dtype=dtype)
+    obs_df['error'] = entry[error_names].values.astype(dtype)
     obs_df = obs_df.drop(drop_cols).reset_index()
     obs_df = obs_df.rename(columns={'index':'name'})
     
