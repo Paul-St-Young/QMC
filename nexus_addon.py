@@ -334,7 +334,7 @@ from lxml import etree
 #QBase.options.transfer_from(options)
 
 import os
-def scalars_from_input(qmcinput,extract = ["mean","error"],skip_failed=False,igroup=-1):
+def scalars_from_input(qmcinput,extract = ["mean","error"],skip_failed=False,igroup=-1,force_open=False):
     """ Look for calculations specified in qmcinput xml, analyze each scalar.dat file and return a dictionary of data. Need to specify equilibration length with:
     from qmca import QBase
     options = {"equilibration":"auto"}
@@ -365,6 +365,9 @@ def scalars_from_input(qmcinput,extract = ["mean","error"],skip_failed=False,igr
     else:
         open_system = True # skipt lattice section, presumably for open system
     # end if
+    if force_open:
+        open_system = True
+    # end if
     
     data = []
     loops = xml.xpath('//loop')
@@ -377,7 +380,10 @@ def scalars_from_input(qmcinput,extract = ["mean","error"],skip_failed=False,igr
     # find twistnum if it exists
     twistnum = -1
     builders = xml.xpath('//sposet_builder[@type="bspline"]')
-    if (len(builders) == 0) and (not open_system):
+    if open_system:
+        # could be determinantset replaces sposet_builder in legacy input
+        twistnum = 0
+    elif (len(builders) == 0):
         raise IOError('failed to read sposet_builder')
         # exempt with a flag if not using spline wavefunction
     elif (len(builders)!=1):
@@ -387,6 +393,7 @@ def scalars_from_input(qmcinput,extract = ["mean","error"],skip_failed=False,igr
     # end if
 
     for iqmc in range(len(calcs)):
+        failed = False
 
         entry = {}
 
@@ -441,6 +448,7 @@ def scalars_from_input(qmcinput,extract = ["mean","error"],skip_failed=False,igr
         try:
             qa = DatAnalyzer(scalar_file,0)
         except:
+            failed = True
             if skip_failed:
                 #data.append(entry)
                 continue
@@ -456,8 +464,10 @@ def scalars_from_input(qmcinput,extract = ["mean","error"],skip_failed=False,igr
             # end for
         # end for
 
-        data.append(entry)
-    # end for i
+        if not failed:
+            data.append(entry)
+        # end if
+    # end for iqmc
     return data
 # end def 
 
