@@ -2,27 +2,28 @@
 import h5py
 import numpy as np
 
-def grab_stat_entries(stat_file_name,name,exact_name=False):
+def grab_stat_entries(stat_file_name,name):
     """ stat_file_name: .stat.h5 file name, name: ex. gofr """
     stat_file = h5py.File(stat_file_name)
     
     data = []
-    # find each entry and extract data
+    # find entry and extract data
     for estimator in stat_file.keys():
-        if estimator.startswith(name):
-            if exact_name and estimator != name:
-                continue
-            # end if
-            entry = {"name":estimator}
-            for key,value in stat_file[estimator].iteritems():
-                entry[key] = value[:]
-                if entry[key].shape == (1,):
-                    entry[key] = entry[key][0]
-                # end if
-            # end for
-            data.append(entry)
+        if estimator != name:
+            continue
         # end if
+        entry = {"name":estimator}
+        for key,value in stat_file[estimator].iteritems():
+            entry[key] = value[:]
+            if entry[key].shape == (1,):
+                entry[key] = entry[key][0]
+            # end if
+        # end for
+        data.append(entry)
     # end for
+    if len(data) == 0:
+        raise RuntimeError('no entry named %s was found in %s'%(name,stat_file_name))
+    # end if
     return data
 # end def grab_stat_entries
 
@@ -102,7 +103,7 @@ def show_sk(sk_json):
     plt.show()
 # end def show_sk
 
-def show_gr(gr_json):
+def show_gr(gr_json,gr_name):
     import matplotlib.pyplot as plt
     # analyze g(r)
     gr_df = pd.read_json(gr_json)
@@ -126,16 +127,12 @@ def show_gr(gr_json):
 
 
 import pandas as pd
-def raw_stats(stat_files,observable,exact_name=False):
+def raw_stats(stat_files,observable):
     """ given a list of files, save all raw data related to observable """
 
     data = []
-    twistnum = 0 # !!!! need better way to determine twistnum
-    # does not matter if twistnum never used
     for fname in stat_files:
-        mydf = pd.DataFrame( grab_stat_entries(fname,observable,exact_name) )
-        mydf['twistnum'] = twistnum
-        twistnum += 1
+        mydf = pd.DataFrame( grab_stat_entries(fname,observable) )
         data.append(mydf)
     # end for
     if len(data) == 0:
@@ -146,38 +143,45 @@ def raw_stats(stat_files,observable,exact_name=False):
     return df
 # end def raw_stats
 
-def avg_twists(raw_df,mat_entries,drop_columns=[],skip_array=False):
-    """ raw_df must at least contain the 'name', 'value', and 'twistnum' columns
-     twistnum column does not have to be meaningful, it is simply there to distinguish
-     data from different twists, all twisted are weighted 1. """
+def avg_twists(raw_df,meta_cols,drop_columns=[],skip_array=False):
+    """ raw_df must at least contain the 'name','value_mean', meta_cols columns """
     
-    if len(mat_entries) == 0:
-        raise NotImplementedError('must provide at least one column to average.')
-    # end if
     err_avg = lambda x:np.sqrt(np.mean(x**2.))/np.sqrt(len(x))
 
-    # generate average dataframe using the first column
-    groups2avg = raw_df.groupby('name')[mat_entries[0]]
-    avg_df = pd.DataFrame( groups2avg.apply(np.mean) )
-    avg_df[mat_entries[0]+'_mean'] = groups2avg.apply(err_avg)
+    # check name of observable
+    myname_list = raw_df['name'].unique()
+    if len(myname_list) !=1:
+        raise RuntimeError('expect one observable, found %s'%str(myname_list))
+    # end if
+    myname = myname_list[0] # save name
 
-    # generate the rest of the columns
-    for col_name in mat_entries[1:]:
-        avg_df[col_name]  = raw_df.groupby('name')[col_name].apply(np.mean)
-        avg_df[col_name] = raw_df.groupby('name')[col_name].apply(err_avg)
-    # end for col_name
-    
-    # get others parameters, which are assumed to be same across twists
-    default_drops = ['name','twistnum']
-    params = raw_df.iloc[0].drop(default_drops+mat_entries+drop_columns).to_dict()
-    
-    for key,val in params.iteritems():
-        if (type(val) is np.ndarray) and (not skip_array):
-            raise NotImplementedError(key+' is array')
+    # make twist-averaged database
+    data = []
+    '''
+    for name in mat_cols:
+        values = np.mean(raw_df[name].values,axis=0)
+        errors = np.apply_along_axis(err_avg,0,raw_df[name.replace('_mean','_error'))
+        data.append(values)
+        data.append(errors)
+    # end for name
+    avg_df = pd.DataFrame(data,index=mat_cols).T
+    '''
+    values = np.mean(raw_df['value_mean'].values,axis=0)
+    errors = np.apply_along_axis(err_avg,0,raw_df['value_error'].values)
+    avg_df = pd.DataFrame([[values],[errors]],index=['value_mean','value_error']).T
+
+    avg_df['name']  = myname
+    avg_df['nblock'] = [raw_df['nblock'].values]
+    for mcol in meta_cols:
+        meta_data = raw_df.iloc[0][mcol]
+        if type(meta_data) is np.ndarray:
+            avg_df[mcol] = [meta_data]
+        else:
+            avg_df[mcol] = meta_data
         # end if
-        avg_df[key] = params[key]
-    # end for key
-    return avg_df.reset_index()
+    # end for mcol
+
+    return avg_df
 # end def avg_twists
 
 def equil_spectrum(matrix_data,nequil,warn=True):
@@ -239,73 +243,74 @@ def mat_error(matrix_data):
 # end def
 
 import os
-def analyze_stat_h5s(stat_files,nequil,prefix,exact_name=False,warn=True
-    ,mat_entries = {
-    'gofr':['value','value_squared','value_mean','value_error'],
-    'sk':['value','value_squared','kpoints','value_mean','value_error']
-}):
+def analyze_stat_h5s(stat_files,nequil,prefix,observable,warn=True):
     """ analyze a list of stat.h5 files generated by QMCPACK, 
      the default is to analyze g(r) and s(k), assuming the names
      'gofr*', 'sk*'. Analysis steps:
       1. load raw data from each stat.h5 file
       2. perform twist average on matrix entries
       3. throw out equilibration
-      4. save each analyzed observable in a local database named
+      4. return the analyzed database
        prefix_observable.json
     """
+
+    # !!!! hard-coded maps
+    """
+    mat_entries = {
+    'gofr':['value','value_squared','value_mean','value_error'],
+    'sk':['value','value_squared','kpoints','value_mean','value_error']
+    }
+    """
+    meta_entries = {
+    'gofr':['name','cutoff'],
+    'sk':['name','kpoints'],
+    'skc':['name','kpoints'],
+    'latdev':['name'],
+    'skinetic':['name']
+    }
     
-    for observable in mat_entries.keys():
+    # load raw data
+    df = raw_stats(stat_files,observable)
 
-        target_json = '%s_%s.json'%(prefix,observable)
-        if os.path.isfile(target_json):
-            continue
+    # check if some twists have missing blocks
+    #  also throw out equilibration (i.e. slice out nequil:minb)
+    df['nblock'] = df['value'].apply(lambda x:x.shape[0])
+
+    # cutout useful part of trace [nbegin:]
+    nbegin = nequil
+    minb = df['nblock'].min()
+    maxb = df['nblock'].max()
+    if minb != maxb:
+        if warn:
+            print " only using %d blocks for %s from %s" % (
+                minb,observable,os.path.dirname(stat_files[0]) )
         # end if
-
-        # load raw data
-        if observable == 'sk': # !!!! hack
-            df = raw_stats(stat_files,observable,exact_name=True)
-        else:
-            df = raw_stats(stat_files,observable,exact_name=exact_name)
+    # end if
+    if nequil >= minb:
+        raise RuntimeError('not enough data (%d) for %d equilibration steps' % (minb,nequil))
+    # end if
+    
+    for col in df: # !!!! assume only column with names * need to be averaged
+        if col.startswith('value'):
+            df.loc[:,col] = df[col].apply(lambda x:x[nbegin:])
         # end if
+    # end for
 
-        # check if some twists have missing blocks
-        #  also throw out equilibration (i.e. slice out nequil:minb)
-        df['nblock'] = df[mat_entries[observable][0]].apply(lambda x:x.shape[0])
-        minb = min(df['nblock'])
-        maxb = max(df['nblock'])
-        if minb != maxb:
-            if warn:
-                print " only using %d blocks for %s from %s" % (minb,observable,os.path.dirname(stat_files[0]))
-            # end if
-            if nequil >= minb:
-                raise RuntimeError('not enough data (%d) for %d equilibration steps' % (minb,nequil))
-            # end if
-            for col in df: # !!!! assume only column with names * need to be averaged
-                if col.startswith('value'):
-                    df.loc[:,col] = df[col].apply(lambda x:x[nequil:minb])
-                # end if
-            # end for
-        # end if
+    # average over blocks
+    df['value_mean']  = df['value'].apply(np.mean,axis=0)
+    df['value_error'] = df['value'].apply(mat_error)
 
-        # average over blocks
-        df['value_mean']  = df['value'].apply(np.mean,axis=0)
-	df['value_error'] = df['value'].apply(mat_error)
+    # average over twists
+    if observable.startswith('gofr'):
+        meta_data = meta_entries['gofr']
+    else:
+        meta_data = meta_entries[observable]
+    # end if
 
-        # average over twists
-        #avg_df = pd.DataFrame( df.groupby('name')['value_mean'].apply(np.mean) )
-        #err_avg = lambda x:np.sqrt(np.mean(x**2.))/np.sqrt(len(x))
-        #avg_df['value_error'] = df.groupby('name')['value_error'].apply(err_avg)
-        avg_df = avg_twists(df,mat_entries[observable])
+    avg_df = avg_twists(df,meta_data)
 
-        # throw out equilibration (!!!! assume value and value_squared)
-        #avg_df['value'] = avg_df['value'].apply(
-        #    lambda x:equil_spectrum(x,nequil))
-        #avg_df['value_squared'] = avg_df['value_squared'].apply(
-        #    lambda x:equil_spectrum(x,nequil))
-        avg_df.to_json(target_json)
+    return avg_df
         
-    # end for observable
-    
 # end def analyze_stat_h5s
 
 import subprocess as sp
@@ -361,13 +366,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='analyze g(r) and S(k) and plot if asked. QMCPACK stat.h5 files must be available in given path.')
     parser.add_argument('path',type=str,help='path to QMCPACK run directory')
     parser.add_argument('-is','--iseries',type=int,default=2,help='series index 2 -> s002')
-    parser.add_argument('-exact','--use_exact_name',action='store_true',help='only collect observable with the exact name given. Default is to use name.startswith(name_given).')
     parser.add_argument('-eq','--nequil',type=int,default=5,help='number of equilibration steps')
     parser.add_argument('-psk','--plot_sk',action='store_true',help='plot S(k)')
     parser.add_argument('-pgr','--plot_gr',action='store_true',help='plot g(r)')
     parser.add_argument('--gr_name',type=str,default='gofr_e_0_1',help='plot g(r)')
-    parser.add_argument('-nogr','--no_gr',action='store_true',help='do not collect g(r)')
-    parser.add_argument('-nosk','--no_sk',action='store_true',help='do not collect S(k)')
     parser.add_argument('-skipa','--skip_analysis',action='store_true',help='skip analysis, allow plotting if the desired json file already exists')
     parser.add_argument('-pre','--prefix',type=str,default=None,help='e.g. to plot myrun_gofr.json, use -pre myrun -skipa')
     args = parser.parse_args()
@@ -378,9 +380,13 @@ if __name__ == '__main__':
     plot_sk = args.plot_sk
     plot_gr = args.plot_gr
     gr_name = args.gr_name
-    exact_name = args.use_exact_name
 
-    # this analysis block generates 'prefix_sk.json'
+    # dynamic-lattice
+    observables = ['latdev','gofr_e_0_0','gofr_e_0_1','gofr_e_0_2','gofr_e_1_2','gofr_e_2_2','sk','skc']
+    # static-lattice
+    observables = ['gofr_e_0_0','gofr_e_0_1','sk']
+
+    # this analysis block generates 'prefix_sk.json' and 'prefix_gofr.json'
     if not args.skip_analysis:
 
         stat_files = find_stat_h5_by_series(qmc_path,iseries)
@@ -393,22 +399,26 @@ if __name__ == '__main__':
         # end if
         prefix = stat_files[0].split('.')[0]+'.equil%d'%nequil
 
-        mat_entries = {
-            'gofr':['value','value_squared','value_mean','value_error'],
-            'sk':['value','value_squared','kpoints','value_mean','value_error'],
-            #'skc':['value','value_squared','kpoints']
-        }
-        if args.no_sk:
-            mat_entries.pop('sk')
-        elif args.no_gr:
-            mat_entries.pop('gofr')
-        # end if
-
         stat_file_locs = [os.path.join(qmc_path,fname) for fname in stat_files]
-        analyze_stat_h5s(stat_file_locs,nequil,prefix,exact_name=exact_name
-            ,mat_entries = mat_entries)
-            #,mat_entries = {'sk':['kpoints','value','value_squared']})
 
+        data = []
+        for observable in observables:
+            data.append( analyze_stat_h5s(stat_file_locs,nequil,prefix,observable) )
+        # end for
+        df = pd.concat(data).reset_index(drop=True)
+
+        gr_sel = df['name'].apply(lambda x:x.startswith('gofr'))
+        sk_sel = df['name'].apply(lambda x:x=='sk' or x=='skc')
+        other_sel = ~(gr_sel | sk_sel)
+        if gr_sel.any():
+            df[gr_sel].dropna(axis=1).reset_index(drop=True).to_json(prefix+'_gofr.json')
+        # end if
+        if sk_sel.any():
+            df[sk_sel].dropna(axis=1).reset_index(drop=True).to_json(prefix+'_sk.json')
+        # end if
+        if other_sel.any():
+            df[other_sel].dropna(axis=1).reset_index(drop=True).to_json(prefix+'_other.json')
+        # end if
     # end if
 
     if args.skip_analysis:
@@ -425,6 +435,6 @@ if __name__ == '__main__':
 
     if plot_gr:
         gr_json = prefix+'_gofr.json'
-        show_gr(gr_json)
+        show_gr(gr_json,gr_name=gr_name)
     # end if plot_gr
 # end __main__
