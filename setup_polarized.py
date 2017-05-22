@@ -58,9 +58,12 @@ def change_ion0_to_wf_ceneters(ion0):
 
 # end def change_ion0_to_wf_ceneters
 
-def edit_quantum_particleset(e_particleset,centers,rs,hname='p'):
+def edit_quantum_particleset(e_particleset,centers,rs,ion_width=10.0,hname='p'):
     # centers: wf_centers
     nions = len(centers)
+    # average <R^2>
+    sig2 = 3./(4.*ion_width)
+    ion_sig = np.sqrt(sig2)
 
     # initialize electrons manually: remove random, add attrib positions
     # ======================================
@@ -76,8 +79,8 @@ def edit_quantum_particleset(e_particleset,centers,rs,hname='p'):
 
     # sprinkle particles around ion positions
     # --------------------------------------
-    electron_pos = gaussian_move(centers,0.2*rs)
-    proton_pos = gaussian_move(centers,0.01*rs)
+    electron_pos = gaussian_move(centers,0.2*rs)   # electrons equilibrate quickly
+    proton_pos = gaussian_move(centers,ion_sig*rs) # protons are slow, initialize well
 
     # should be 2 groups in electronic wf, one u, one d
     spin_groups = e_particleset.findall("group")
