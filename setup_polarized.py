@@ -58,7 +58,7 @@ def change_ion0_to_wf_ceneters(ion0):
 
 # end def change_ion0_to_wf_ceneters
 
-def edit_quantum_particleset(e_particleset,centers,rs):
+def edit_quantum_particleset(e_particleset,centers,rs,hname='p'):
     # centers: wf_centers
     nions = len(centers)
 
@@ -104,7 +104,7 @@ def edit_quantum_particleset(e_particleset,centers,rs):
     #  steal from electron section
     unit = codata2016()
     p_section = deepcopy( e_section )
-    p_section.attrib["name"] = "H"
+    p_section.attrib["name"] = hname
     p_section.attrib['mass'] = str(unit.mp/unit.me)
     p_section.attrib['size'] = str(nions)
     p_section.xpath('.//parameter[@name="charge"]')[0].text =  '    1    '
@@ -115,7 +115,7 @@ def edit_quantum_particleset(e_particleset,centers,rs):
     e_particleset.append(p_section)
 # end def
 
-def edit_jastrows(wf):
+def edit_jastrows(wf,hname='p'):
 
     # 1.  grab Uep and remove ep jastrow
     j1  = wf.xpath('//jastrow[@name="J1"]')[0]
@@ -132,7 +132,6 @@ def edit_jastrows(wf):
         eHterm = deepcopy(term)
 
         etype = etypes[ie] # 0:u, 1:d
-        hname = "H"
 
         eHterm.attrib["speciesA"] = etype
         eHterm.attrib["speciesB"] = hname
@@ -143,6 +142,37 @@ def edit_jastrows(wf):
         j2.append(eHterm)
 
     # end for ie
+
+# end def edit_jastrows
+
+def edit_backflows(wf):
+
+    bf_node = wf.find('.//backflow')
+    if bf_node is None:
+        return # nothing to do
+
+    # 1.  grab eta_ei and remove e-I backflow
+    bf1  = wf.find('.//transformation[@type="e-I"]')
+    if bf1 is None:
+        return # nothing to do
+    eta1 = bf1.xpath('.//correlation')
+    bf_node.remove(bf1)
+
+    # 2. edit 2-body backflow to add e-p correlation
+    bf2  = wf.find('.//transformation[@type="e-e"]')
+    etypes = {0:"u",1:"d"}
+    for eta in eta1:
+        ion_name = eta.attrib.pop('elementType')
+        ion_name = 'p' # !!!! override ion name
+        for ie in etypes.keys():
+            ename = etypes[ie]
+            eta.set('speciesA',ename)
+            eta.set('speciesB',ion_name)
+            coeff = eta.find('.//coefficients')
+            coeff.set('id',ename+ion_name+'B')
+            bf2.append(deepcopy(eta))
+        # end for ie
+    # end for eta
 
 # end def edit_jastrows
 
@@ -162,11 +192,19 @@ def edit_hamiltonian(ham):
 # end def edit_hamiltonian
 
 def edit_determinantset(wf,centers,ion_width):
-    """ construct <sposet_builder type="mo"> for protons and add one determinant to slater
-     build single-particle orbitals around "wf_centers" instead of "ion0"  """
+    """ construct <sposet_builder type="mo"> for protons and add one determinant to slater """
     nions = len(centers)
 
-    # start <sposet_builder>
+    # get electronic sposet_builder
+    ebuilder = wf.find('sposet_builder[@source="ion0"]')
+    if ebuilder is None:
+        raise RuntimeError('electronic sposet_builder with source="ion0" not found.')
+    # end if 
+
+    # build electronic single-particle orbitals around "wf_centers" instead of "ion0"
+    ebuilder.set('source','wf_centers')
+
+    # start <sposet_builder> for protons
     pbuilder = etree.Element('sposet_builder',attrib={
 	'type':'mo',            # use MolecularOrbitalBuilder
 	'source':'wf_centers',  # use static lattice sites for proton w.f.
@@ -224,9 +262,9 @@ def edit_determinantset(wf,centers,ion_width):
 	'sposet':psposet.get('name')
     })
 
-    wf.find("wavefunction") # !!!! assuming one wave function (name="psi0")
-    slater = wf.find("determinantset/slaterdeterminant")
-    wf.insert(1,pbuilder) # insert after electronic sposet_builder, !!!! assuming electronic spo before
+    slater = wf.find('determinantset/slaterdeterminant')
+    ebuilder_idx = wf.index(ebuilder)
+    wf.insert(ebuilder_idx+1,pbuilder) # insert after electronic sposet_builder
     slater.append(pdet)
 
 # end def edit_determinantset
@@ -246,6 +284,7 @@ def bo_to_nobo(bo_input_name,nobo_input_name,ion_width=10.0,rs=1.31):
 
     wf = xml.xpath("//wavefunction")[0]
     edit_jastrows(wf)
+    edit_backflows(wf)
     edit_determinantset(wf,centers,ion_width)
 
     ham = xml.xpath("//hamiltonian")[0]
