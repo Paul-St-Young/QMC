@@ -34,7 +34,8 @@ def change_ion0_to_wf_ceneters(ion0):
 
     ion0.attrib['name'] = 'wf_centers'
     protons = ion0.find("group")
-    protons.attrib.pop("mass")
+    if 'mass' in protons.attrib:
+        protons.attrib.pop("mass")
     protons.attrib.pop("size")
     #protons.attrib["name"] = "centers"
 
@@ -161,48 +162,81 @@ def edit_hamiltonian(ham):
 # end def edit_hamiltonian
 
 def edit_determinantset(wf,centers,ion_width):
+    """ construct <sposet_builder type="mo"> for protons and add one determinant to slater
+     build single-particle orbitals around "wf_centers" instead of "ion0"  """
     nions = len(centers)
-    # build single-particle orbitals around "wf_centers" instead of "ion0"
-    wf.find("sposet_builder").attrib['source'] = 'wf_centers'
 
+    # start <sposet_builder>
+    pbuilder = etree.Element('sposet_builder',attrib={
+	'type':'mo',            # use MolecularOrbitalBuilder
+	'source':'wf_centers',  # use static lattice sites for proton w.f.
+	'transform':'yes',      # use numerical radial function and NGOBuilder
+	'name':'proton_builder'
+    }) # !!!! transformOpt flag forces cuspCorr="yes" and key="NMO"
+
+    # construct <basisset>
+    pbasis = etree.Element("basisset")
+    pao_basis = etree.Element('atomicBasisSet',attrib={
+	'elementType':'H',     # identifier for aoBuilder
+	'angular':'cartesian', # Use Gamess-style order of angular functions
+	'type':'GTO',          # use Gaussians in NGOBuilder::addRadialOrbital()
+	'normalized':'yes'     # do not mess with my input coefficients
+    })
+
+    # build <grid>
+    bgrid = etree.Element('grid',{
+	'npts':'1001',
+	'rf':'100',
+	'ri':'1.e-6',
+	'type':'log'
+    })
+
+    # build <basisGroup>
+    bgroup = etree.Element('basisGroup',{
+	'l':'0',
+	'n':'1',
+	'rid':'R0'
+    })
+    bgroup.append(etree.Element('radfunc',{'contraction':'1.0','exponent':'9.0'}))
+
+    pao_basis.append(bgrid)
+    pao_basis.append(bgroup)
+    pbasis.append(pao_basis)
+    # finished construct </basisset>
+
+    # build <sposet>
+    psposet = etree.Element('sposet',attrib={
+	'name':'spo_p',
+	'id':'proton_orbs',
+	'size':str(nions) # SPOSetBase::put
+	# no 'cuspInfo'
+    })
+    pbuilder.append(pbasis)  # build basis set
+    pbuilder.append(etree.Comment("Identity coefficient matrix by default SPOSetBase::setIdentity"))
+    pbuilder.append(psposet) # build single-particle orbitals
+    # end </sposet_builder>
+
+    # build <determinant>
+    pdet = etree.Element('determinant',{
+	'group':'p',
+	'id':'pdet',
+	'size':str(nions),
+	'sposet':psposet.get('name')
+    })
+
+    wf.find("wavefunction") # !!!! assuming one wave function (name="psi0")
     slater = wf.find("determinantset/slaterdeterminant")
+    wf.insert(1,pbuilder) # insert after electronic sposet_builder, !!!! assuming electronic spo before
+    slater.append(pdet)
 
-    # add basis to first determinant
-    basis = etree.Element("basisset",{"ref":"wf_centers"})
-
-    atomic_basis = etree.Element("atomicBasisSet",{
-        "name":"G2","angular":"cartesian","type":"GTO",
-        "elementType":"H","normalized":"no"
-    })
-    atomic_basis.append(etree.Element("grid",{
-        "type":"log","ri":"1.e-6","rf":"1.e2","npts":"1001"
-    }))
-    basis_group = etree.Element("basisGroup",{
-        "rid":"R0","n":"1","l":"0","type":"Gaussian"
-    })
-    basis_group.append(etree.Element("radfunc",{
-        "exponent":str(ion_width),"contraction":"1"}))
-
-    atomic_basis.append(basis_group)
-    basis.append(atomic_basis)
-
-    # add a determinant for protons
-    Hdet = etree.Element("determinant",
-            {"id":"Hdet","group":"H","spin":"0","size":str(nions)
-             ,"type":"mo","source":"wf_centers"})
-    coeff = etree.Element("coefficient",
-            {"id":"HdetC","type":"constArray","size":str(nions)})
-    coeff.text = matrix_to_text(np.eye(nions))
-    Hdet.append(basis)
-    Hdet.append(coeff)
-    slater.append(Hdet)
 # end def edit_determinantset
 
 #  Main Routine
 # ======================================
 def bo_to_nobo(bo_input_name,nobo_input_name,ion_width=10.0,rs=1.31):
 
-    xml = etree.parse(bo_input_name)
+    parser = etree.XMLParser(remove_blank_text=True)
+    xml = etree.parse(bo_input_name,parser)
 
     ion0 = xml.xpath('//particleset[@name="ion0"]')[0]
     centers = change_ion0_to_wf_ceneters(ion0)
@@ -222,6 +256,9 @@ def bo_to_nobo(bo_input_name,nobo_input_name,ion_width=10.0,rs=1.31):
 
 if __name__ == "__main__":
     import sys
-    prefix = sys.argv[1]
-    bo_to_nobo(prefix+"-dmc.in.xml",prefix+"-nobo.in.xml")
+    #prefix = sys.argv[1]
+    #bo_to_nobo(prefix+"-dmc.in.xml",prefix+"-nobo.in.xml")
+    inp_xml = sys.argv[1]
+    out_xml = 'nobo-'+inp_xml
+    bo_to_nobo(inp_xml,out_xml)
 # end __main__

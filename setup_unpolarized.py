@@ -49,7 +49,8 @@ def change_ion0_to_wf_ceneters(ion0):
 
     ion0.attrib['name'] = 'wf_centers'
     protons = ion0.find("group")
-    protons.attrib.pop("mass")
+    if 'mass' in protons.attrib:
+        protons.attrib.pop("mass")
     protons.attrib.pop("size")
 
     for child in protons:
@@ -292,6 +293,9 @@ def bo_to_nobo(bo_input_name,nobo_input_name,ion_width=10.0,rs=1.31):
 
 if __name__ == "__main__":
     import sys
-    prefix = sys.argv[1]
-    bo_to_nobo(prefix+"-dmc.in.xml",prefix+"-nobo.in.xml")
+    #prefix = sys.argv[1]
+    #bo_to_nobo(prefix+"-dmc.in.xml",prefix+"-nobo.in.xml")
+    inp_xml = sys.argv[1]
+    out_xml = 'nobo-'+inp_xml
+    bo_to_nobo(inp_xml,out_xml)
 # end __main__
