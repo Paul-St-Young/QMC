@@ -138,6 +138,7 @@ def edit_jastrows(wf,hname='p'):
 
         eHterm.attrib["speciesA"] = etype
         eHterm.attrib["speciesB"] = hname
+        eHterm.attrib["cusp"] = "1.0"
 
         coeff = eHterm.find("coefficients")
         coeff.attrib["id"] = etype+hname 
