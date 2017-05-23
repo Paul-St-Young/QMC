@@ -27,6 +27,28 @@ def grab_stat_entries(stat_file_name,name):
     return data
 # end def grab_stat_entries
 
+def sorted_configs(fconf):
+    fp = h5py.File(fconf)
+
+    all_conf_keys = [key for key in fp.keys() if key.startswith('walkers') and key!='walkers']
+    nblock = len(all_conf_keys) # number of blocks recorded
+    nwalker,natom,ndim = fp[all_conf_keys[0]].value.shape
+
+    configs = np.zeros([nwalker*nblock,natom,ndim])
+    iconf = 0
+    conf_idx = [int(key.strip('walkers')) for key in all_conf_keys]
+    srt_idx = np.argsort(conf_idx)
+    sorted_keys = np.array(all_conf_keys)[srt_idx] # place blocks in order
+    for key in sorted_keys:
+        iblock = int( key.strip('walkers') )
+        configs[iconf:iconf+nwalker,:,:] = fp[key].value.astype(float)
+        iconf += nwalker
+    # end for
+    mapping = '#' + '\n#'.join(sorted_keys)
+
+    return configs,(nblock,nwalker,natom,ndim),mapping
+# end def
+
 def get_gofr_with_name(df,myname,nequil):
     mydf = df[ df.name.apply(lambda x:myname in x) ]
     rcut,dx,name,val,valsq = mydf.iloc[0]
