@@ -58,11 +58,11 @@ def change_ion0_to_wf_ceneters(ion0):
 
 # end def change_ion0_to_wf_ceneters
 
-def edit_quantum_particleset(e_particleset,centers,rs,ion_width=10.0,hname='p'):
+def edit_quantum_particleset(e_particleset,centers,rs,ion_width,hname='p'):
     # centers: wf_centers
     nions = len(centers)
     # average <R^2>
-    sig2 = 3./(4.*ion_width)
+    sig2 = 1./(4.*ion_width) # not 3.* for each direction
     ion_sig = np.sqrt(sig2)
 
     # initialize electrons manually: remove random, add attrib positions
@@ -80,7 +80,7 @@ def edit_quantum_particleset(e_particleset,centers,rs,ion_width=10.0,hname='p'):
     # sprinkle particles around ion positions
     # --------------------------------------
     electron_pos = gaussian_move(centers,0.2*rs)   # electrons equilibrate quickly
-    proton_pos = gaussian_move(centers,ion_sig*rs) # protons are slow, initialize well
+    proton_pos = gaussian_move(centers,ion_sig)    # protons are slow, initialize well
 
     # should be 2 groups in electronic wf, one u, one d
     spin_groups = e_particleset.findall("group")
@@ -195,7 +195,10 @@ def edit_hamiltonian(ham):
 # end def edit_hamiltonian
 
 def edit_determinantset(wf,centers,ion_width):
-    """ construct <sposet_builder type="mo"> for protons and add one determinant to slater """
+    """ construct <sposet_builder type="mo"> for protons and add one determinant to slater
+     wf: the xml node pointing to <wavefunction>
+     centers: proton positions of shape (natom,ndim)
+     ion_width: exponent of Gaussian proton orbital """
     nions = len(centers)
 
     # get electronic sposet_builder
@@ -238,7 +241,7 @@ def edit_determinantset(wf,centers,ion_width):
 	'n':'1',
 	'rid':'R0'
     })
-    bgroup.append(etree.Element('radfunc',{'contraction':'1.0','exponent':'9.0'}))
+    bgroup.append(etree.Element('radfunc',{'contraction':'1.0','exponent':str(ion_width)}))
 
     pao_basis.append(bgrid)
     pao_basis.append(bgroup)
@@ -283,7 +286,7 @@ def bo_to_nobo(bo_input_name,nobo_input_name,ion_width=10.0,rs=1.31):
     centers = change_ion0_to_wf_ceneters(ion0)
 
     e_particleset = xml.xpath('//particleset[@name="e"]')[0]
-    edit_quantum_particleset(e_particleset,centers,rs)
+    edit_quantum_particleset(e_particleset,centers,rs,ion_width)
 
     wf = xml.xpath("//wavefunction")[0]
     edit_jastrows(wf)
@@ -302,5 +305,5 @@ if __name__ == "__main__":
     #bo_to_nobo(prefix+"-dmc.in.xml",prefix+"-nobo.in.xml")
     inp_xml = sys.argv[1]
     out_xml = 'nobo-'+inp_xml
-    bo_to_nobo(inp_xml,out_xml)
+    bo_to_nobo(inp_xml,out_xml,ion_width=9.0)
 # end __main__
