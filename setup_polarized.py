@@ -180,7 +180,7 @@ def edit_backflows(wf):
 
 # end def edit_jastrows
 
-def edit_hamiltonian(ham):
+def edit_hamiltonian(ham,hname='p'):
     # remove all interactions that requires the "ion0" particleset
     for interaction in ham: 
         use_ion0 = False
@@ -193,6 +193,12 @@ def edit_hamiltonian(ham):
             ham.remove(interaction)
         # end if
     # end for
+    # add dynamic run specific estimators
+    skinetic = etree.Element('estimator',{'type':'specieskinetic','name':'skinetic'})
+    latdev = etree.Element('estimator',{'type':'latticedeviation','name':'latdev',
+        'target':'e','tgroup':hname,'source':'wf_centers','sgroup':'H','hdf5':'yes','per_xyz':'yes'})
+    ham.append(skinetic)
+    ham.append(latdev)
 # end def edit_hamiltonian
 
 def edit_determinantset(wf,centers,ion_width):
@@ -211,6 +217,7 @@ def edit_determinantset(wf,centers,ion_width):
     # build electronic single-particle orbitals around "wf_centers" instead of "ion0"
     ebuilder.set('source','wf_centers')
 
+    # start parent -> construct children -> build kids
     # start <sposet_builder> for protons
     pbuilder = etree.Element('sposet_builder',attrib={
 	'type':'mo',            # use MolecularOrbitalBuilder
@@ -256,9 +263,18 @@ def edit_determinantset(wf,centers,ion_width):
 	'size':str(nions) # SPOSetBase::put
 	# no 'cuspInfo'
     })
-    pbuilder.append(pbasis)  # build basis set
+    pbuilder.append(pbasis) 
+    # done construct </basisset>
+
+    # construct <sposet>
+    # <coefficient> is not needed for identity matrix
+    #coeff = etree.Element("coefficient",
+    #    {"id":"HdetC","type":"constArray","size":str(nions)})
+    #coeff.text = matrix_to_text(np.eye(nions))
+    #psposet.append(coeff)
     pbuilder.append(etree.Comment("Identity coefficient matrix by default SPOSetBase::setIdentity"))
     pbuilder.append(psposet) # build single-particle orbitals
+    # done construct </sposet>
     # end </sposet_builder>
 
     # build <determinant>
@@ -271,7 +287,7 @@ def edit_determinantset(wf,centers,ion_width):
 
     slater = wf.find('determinantset/slaterdeterminant')
     ebuilder_idx = wf.index(ebuilder)
-    wf.insert(ebuilder_idx+1,pbuilder) # insert after electronic sposet_builder
+    wf.insert(ebuilder_idx+1,pbuilder) # insert proton_builder after electronic sposet_builder
     slater.append(pdet)
 
 # end def edit_determinantset
