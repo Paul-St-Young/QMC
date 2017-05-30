@@ -377,7 +377,7 @@ def scalars_from_input(qmcinput,extract = ["mean","error"],skip_failed=False,igr
         calcs = xml.xpath("//qmc")
     # end if
 
-    # find twistnum if it exists
+    # find twistnum if it exists, useful for selecting real twists
     twistnum = -1
     builders = xml.xpath('//sposet_builder[@type="bspline"]')
     if open_system:

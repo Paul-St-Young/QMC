@@ -282,7 +282,8 @@ def edit_determinantset(wf,centers,ion_width):
 	'group':'p',
 	'id':'pdet',
 	'size':str(nions),
-	'sposet':psposet.get('name')
+	'sposet':psposet.get('name'),
+        'no_bftrans':'yes' # do not transform proton coordinates
     })
 
     slater = wf.find('determinantset/slaterdeterminant')
