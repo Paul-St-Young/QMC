@@ -216,6 +216,8 @@ def edit_determinantset(wf,centers,ion_width):
 
     # build electronic single-particle orbitals around "wf_centers" instead of "ion0"
     ebuilder.set('source','wf_centers')
+    # use double precision
+    ebuilder.set('precision','double')
 
     # start parent -> construct children -> build kids
     # start <sposet_builder> for protons
