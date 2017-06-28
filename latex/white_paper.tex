@@ -15,6 +15,37 @@
 % \begin{shaded}\begin{verbatim} for block code
 % \begin{subfigure}{0.48\textwidth} for subfigure
 
+% for including code snippets
+\definecolor{lightblue}{rgb}{0.053,0.5,0.977}
+\definecolor{deepblue}{rgb}{0,0,0.5}
+\definecolor{deepred}{rgb}{0.6,0,0}
+\definecolor{deepgreen}{rgb}{0,0.5,0}
+
+\usepackage{listings}
+\lstset{
+language=python,
+basicstyle=\footnotesize\scriptsize,
+commentstyle=\color{lightblue}\ttfamily,
+otherkeywords={\ as\ ,self},             % Add keywords here
+keywordstyle=\color{deepblue}\ttfamily,
+emph={MyClass,__init__},          % Custom highlighting
+emphstyle=\color{deepred}\ttfamily,    % Custom highlighting style
+stringstyle=\color{deepred},
+frame=tb,                         % Any extra options here
+showstringspaces=false            % 
+}
+\lstdefinestyle{Bash}{
+language=Bash,
+keywordstyle=\color{BlueViolet}\bfseries,
+stringstyle=\color{Red},
+showstringspaces=false,
+basicstyle=\tiny\color{black},
+numbers=none,
+captionpos=b,
+tabsize=4,
+breaklines=true
+}
+
 \begin{document}
 \section{Title}
 
