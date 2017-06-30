@@ -24,20 +24,34 @@ def matrix_to_text(matrix):
     return text
 # end def matrix_to_text
 
-def Hu_idx(centers,alat):
-    ''' locate atoms to be set to spin up '''
-    Hu_idx_set = set()
-    for i in range(len(centers)):
-        x,y,z = map(lambda x:int(round(x)),centers[i]/alat)
-        if (x%2) or (y%2) or (z%2):
-            Hu_idx_set.add(i)
-        # end if
-    # end for i
-    if len(Hu_idx_set) != len(centers)/2:
-        raise ValueError("Unpolarized setup failed! Found %d up, need %d up" % (len(Hu_idx_set),len(centers)/2))
+def find_dimers(axes,pos,sep_min=1.0,sep_max=1.4):
+  natom,ndim = pos.shape
+  import pymatgen as mg
+  elem = ['H'] * natom
+  struct = mg.Structure(axes,elem,pos,coords_are_cartesian=True)
+  dtable = struct.distance_matrix
+
+  xidx,yidx = np.where( (sep_min<dtable) & (dtable<sep_max) )
+  pairs = set()
+  for myx,myy in zip(xidx,yidx):
+    mypair1 = (myx,myy)
+    mypair2 = (myy,myx)
+    if (not mypair2 in pairs) and (not mypair2 in pairs):
+      pairs.add(mypair1)
     # end if
-    return Hu_idx_set
-# end def
+  # end for
+  return pairs
+# end def find_dimers
+def Hu_idx(axes,pos,sep_min=1.0,sep_max=1.4):
+  ''' locate atoms to be set to spin up '''
+  pairs = find_dimers(axes,pos,sep_min,sep_max)
+
+  Hu_idx_set = set()
+  for pair in pairs:
+    Hu_idx_set.add(pair[0])
+  # end for pair
+  return Hu_idx_set
+# end def Hu_idx
 
 # START EDIT QMCPACK INPUT XML 
 # ======================================
@@ -72,11 +86,11 @@ def change_ion0_to_wf_ceneters(ion0):
 
 # end def change_ion0_to_wf_ceneters
 
-def edit_quantum_particleset(e_particleset,centers,rs,alat):
+def edit_quantum_particleset(e_particleset,centers,rs,axes,ion_width):
     # centers: wf_centers
     nions = len(centers)
     # locate even and odd sub-lattices
-    Hu_idx_set = Hu_idx(np.array(centers),alat)
+    Hu_idx_set = Hu_idx(axes,np.array(centers))
 
     # initialize electrons manually: remove random, add attrib positions
     # ======================================
@@ -93,7 +107,10 @@ def edit_quantum_particleset(e_particleset,centers,rs,alat):
     # sprinkle particles around ion positions
     # --------------------------------------
     electron_pos = gaussian_move(centers,0.2*rs)
-    proton_pos = gaussian_move(centers,0.01*rs)
+    # average <R^2>
+    sig2 = 1./(4.*ion_width) # not 3.* for each direction
+    ion_sig = np.sqrt(sig2)
+    proton_pos = gaussian_move(centers,ion_sig) # protons are slow, initialize well
 
     Hu_centers = []
     Hd_centers = []
@@ -206,34 +223,64 @@ def edit_hamiltonian(ham):
     # end for
 # end def edit_hamiltonian
 
-def edit_determinantset(wf,centers,ion_width,alat):
+def edit_determinantset(wf,centers,ion_width,axes):
     nions = len(centers)
-    Hu_idx_set = Hu_idx(np.array(centers),alat)
+    # get electronic sposet_builder
+    ebuilder = wf.find('.//sposet_builder[@source="ion0"]')
+    if ebuilder is None:
+        raise RuntimeError('electronic sposet_builder with source="ion0" not found.')
+    # end if 
+
     # build single-particle orbitals around "wf_centers" instead of "ion0"
     wf.find("sposet_builder").attrib['source'] = 'wf_centers'
 
-    slater = wf.find("determinantset/slaterdeterminant")
+    # build electronic single-particle orbitals around "wf_centers" instead of "ion0"
+    ebuilder.set('source','wf_centers')
+    # use double precision
+    ebuilder.set('precision','double')
 
-    # add basis to first determinant
-    basis = etree.Element("basisset",{"ref":"wf_centers"})
+    # start <sposet_builder> for protons
+    pbuilder = etree.Element('sposet_builder',attrib={
+        'type':'mo',            # use MolecularOrbitalBuilder
+        'source':'wf_centers',  # use static lattice sites for proton w.f.
+        'transform':'yes',      # use numerical radial function and NGOBuilder
+        'name':'proton_builder'
+    }) # !!!! transformOpt flag forces cuspCorr="yes" and key="NMO"
 
-    atomic_basis = etree.Element("atomicBasisSet",{
-        "name":"G2","angular":"cartesian","type":"GTO",
-        "elementType":"H","normalized":"no"
+    # construct <basisset>
+    pbasis = etree.Element("basisset")
+    pao_basis = etree.Element('atomicBasisSet',attrib={
+        'elementType':'H',     # identifier for aoBuilder
+        'angular':'cartesian', # Use Gamess-style order of angular functions
+        'type':'GTO',          # use Gaussians in NGOBuilder::addRadialOrbital()
+        'normalized':'yes'     # do not mess with my input coefficients
     })
-    atomic_basis.append(etree.Element("grid",{
-        "type":"log","ri":"1.e-6","rf":"1.e2","npts":"1001"
-    }))
-    basis_group = etree.Element("basisGroup",{
-        "rid":"R0","n":"1","l":"0","type":"Gaussian"
-    })
-    basis_group.append(etree.Element("radfunc",{
-        "exponent":str(ion_width),"contraction":"1"}))
 
-    atomic_basis.append(basis_group)
-    basis.append(atomic_basis)
+    # build <grid>
+    bgrid = etree.Element('grid',{
+        'npts':'1001',
+        'rf':'100',
+        'ri':'1.e-6',
+        'type':'log'
+    })
+
+    # build <basisGroup>
+    bgroup = etree.Element('basisGroup',{
+        'l':'0',
+        'n':'1',
+        'rid':'R0'
+    })
+    bgroup.append(etree.Element('radfunc',{'contraction':'1.0','exponent':str(ion_width)}))
+    pao_basis.append(bgrid)
+    pao_basis.append(bgroup)
+    pbasis.append(pao_basis)
+    # finished construct </basisset>
+    pbuilder.append(pbasis)
+
+    # build <sposet>
 
     # split into up and down protons
+    Hu_idx_set = Hu_idx(axes,np.array(centers))
     identity = np.eye(nions)
     Hup_det  = []
     Hdown_det= []
@@ -245,33 +292,65 @@ def edit_determinantset(wf,centers,ion_width,alat):
         # end if
     # end for i
 
-    # add a determinants for protons
-    Hudet = etree.Element("determinant",
-            {"id":"Hudet","group":"Hu","spin":"0","size":str(nions/2)
-             ,"type":"mo","source":"wf_centers"})
+    pup_sposet = etree.Element('sposet',attrib={
+        'name':'spo_uH',
+        'id':'proton_orbs_up',
+        'size':str(nions/2)
+    })
     coeff = etree.Element("coefficient",
             {"id":"HudetC","type":"constArray","size":str(nions/2)})
     coeff.text = matrix_to_text(Hup_det)
-    Hudet.append(deepcopy(basis))
-    Hudet.append(coeff)
-    slater.append(Hudet)
+    pup_sposet.append(coeff)
 
-    Hddet = etree.Element("determinant",
-            {"id":"Hddet","group":"Hd","spin":"0","size":str(nions/2)
-             ,"type":"mo","source":"wf_centers"})
-    coeff = etree.Element("coefficient",
+    pdn_sposet = etree.Element('sposet',attrib={
+        'name':'spo_dH',
+        'id':'proton_orbs_down',
+        'size':str(nions/2)
+    })
+    coeff1 = etree.Element("coefficient",
             {"id":"HddetC","type":"constArray","size":str(nions/2)})
-    coeff.text = matrix_to_text(Hdown_det)
-    Hddet.append(deepcopy(basis))
-    Hddet.append(coeff)
-    slater.append(Hddet)
+    coeff1.text = matrix_to_text(Hdown_det)
+    pdn_sposet.append(coeff1)
+    # done construct </sposet>
+    pbuilder.append(pup_sposet)
+    pbuilder.append(pdn_sposet)
+    # end </sposet_builder>
+
+    # build <determinant>
+    uHdet = etree.Element('determinant',{
+        'group':'uH',
+        'id':'uHdet',
+        'size':str(nions/2),
+        'sposet':pup_sposet.get('name'),
+        'no_bftrans':'yes' # do not transform proton coordinates
+    })
+    dHdet = etree.Element('determinant',{
+        'group':'dH',
+        'id':'dHdet',
+        'size':str(nions/2),
+        'sposet':pdn_sposet.get('name'),
+        'no_bftrans':'yes' # do not transform proton coordinates
+    })
+    # end </determinant>
+    slater = wf.find('determinantset/slaterdeterminant')
+    slater.append(uHdet)
+    slater.append(dHdet)
+
+    ebuilder_idx = wf.index(ebuilder)
+    wf.insert(ebuilder_idx+1,pbuilder) # insert proton_builder after electronic sposet_builder
 # end def edit_determinantset
 
 #  Main Routine
 # ======================================
-def bo_to_nobo(bo_input_name,nobo_input_name,ion_width=10.0,rs=1.31):
+def bo_to_nobo(bo_input_name,nobo_input_name,ion_width=9.0,rs=1.31):
 
-    xml = etree.parse(bo_input_name)
+    parser = etree.XMLParser(remove_blank_text=True)
+    xml = etree.parse(bo_input_name,parser)
+    from input_xml import InputXml
+    inp = InputXml()
+    inp.read(bo_input_name)
+    axes = inp.lattice_vectors()
+    del inp
 
     ion0 = xml.xpath('//particleset[@name="ion0"]')[0]
     centers = change_ion0_to_wf_ceneters(ion0)
@@ -279,11 +358,11 @@ def bo_to_nobo(bo_input_name,nobo_input_name,ion_width=10.0,rs=1.31):
     alat = np.sort(np.unique(np.array(centers).flatten()))[1]
 
     e_particleset = xml.xpath('//particleset[@name="e"]')[0]
-    edit_quantum_particleset(e_particleset,centers,rs,alat)
+    edit_quantum_particleset(e_particleset,centers,rs,axes,ion_width)
 
     wf = xml.xpath("//wavefunction")[0]
     edit_jastrows(wf)
-    edit_determinantset(wf,centers,ion_width,alat)
+    edit_determinantset(wf,centers,ion_width,axes)
 
     ham = xml.xpath("//hamiltonian")[0]
     edit_hamiltonian(ham)

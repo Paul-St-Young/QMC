@@ -131,25 +131,45 @@ def edit_jastrows(wf,hname='p'):
 
     etypes = {0:"u",1:"d"}
     for ie in range(2):
-         
-        eHterm = deepcopy(term)
+       
+      eHterm = deepcopy(term)
 
-        etype = etypes[ie] # 0:u, 1:d
+      etype = etypes[ie] # 0:u, 1:d
 
-        eHterm.attrib["speciesA"] = etype
-        eHterm.attrib["speciesB"] = hname
-        eHterm.attrib["cusp"] = "1.0"
+      eHterm.attrib["speciesA"] = etype
+      eHterm.attrib["speciesB"] = hname
+      eHterm.attrib["cusp"] = "1.0"
 
-        coeff = eHterm.find("coefficients")
+      coeff = eHterm.find("coefficients")
+      if (etype == "u"):
         coeff.attrib["id"] = etype+hname 
         coeff.text = Uep # initialize e-p Jastrow to clamped values
-        j2.append(eHterm)
+      else:
+        eHterm = etree.Element('correlation',{'speciesA':'d','speciesB':hname,'link':'u'+hname})
+      # end if
+      j2.append(eHterm)
 
     # end for ie
+    # explicitly link dd to uu
+    j2.append(etree.Element('correlation',{'speciesA':'d','speciesB':'d','link':'uu'}))
+
+    # 3. add an empty p-p correlation term
+    pp_term = deepcopy(term)
+
+    pp_term.set('speciesA',hname)
+    pp_term.set('speciesB',hname)
+    pp_term.set('cusp','0.0')
+
+    coeff = pp_term.find('coefficients')
+    nsize = int(term.get('size'))
+    text  = '\n'+' '.join(['0.0']*nsize)+'\n'
+    coeff.set('id',hname+hname+'J')
+    coeff.text = text
+    j2.append(pp_term)
 
 # end def edit_jastrows
 
-def edit_backflows(wf):
+def edit_backflows(wf,hname='p'):
 
     bf_node = wf.find('.//backflow')
     if bf_node is None:
@@ -164,18 +184,24 @@ def edit_backflows(wf):
 
     # 2. edit 2-body backflow to add e-p correlation
     bf2  = wf.find('.//transformation[@type="e-e"]')
+    term = bf2.find('.//correlation')
+
+    up_term = deepcopy(term)
+    up_term.set('speciesA','u')
+    up_term.set('speciesB',hname)
+
     etypes = {0:"u",1:"d"}
     for eta in eta1:
-        ion_name = eta.attrib.pop('elementType')
-        ion_name = 'p' # !!!! override ion name
-        for ie in etypes.keys():
-            ename = etypes[ie]
-            eta.set('speciesA',ename)
-            eta.set('speciesB',ion_name)
-            coeff = eta.find('.//coefficients')
-            coeff.set('id',ename+ion_name+'B')
-            bf2.append(deepcopy(eta))
-        # end for ie
+      ion_name = eta.attrib.pop('elementType')
+      ion_name = 'p' # !!!! override ion name
+      for ie in etypes.keys():
+        ename = etypes[ie]
+        eta.set('speciesA',ename)
+        eta.set('speciesB',ion_name)
+        coeff = eta.find('.//coefficients')
+        coeff.set('id',ename+ion_name+'B')
+        bf2.append(deepcopy(eta))
+      # end for ie
     # end for eta
 
 # end def edit_jastrows
