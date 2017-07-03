@@ -55,7 +55,7 @@ def Hu_idx(axes,pos,sep_min=1.0,sep_max=1.4):
 
 # START EDIT QMCPACK INPUT XML 
 # ======================================
-def change_ion0_to_wf_ceneters(ion0):
+def change_ion0_to_wf_ceneters(ion0,axes):
 
     # change ion0 particle set to be artificial centers around which
     #  to expand the wave function
@@ -81,6 +81,33 @@ def change_ion0_to_wf_ceneters(ion0):
     centers = [map(float,center.split()) for center in centers_text.split("\n")[1:-1]]
     nions = len(centers)
     ion0.find("group").attrib["size"] = str(nions)
+
+    # split centers to up and down groups
+    # ======================================
+    # get data
+    Hu_idx_set = Hu_idx(axes,np.array(centers))
+    Hu_centers = []
+    Hd_centers = []
+    for i in range(nions):
+      if i in Hu_idx_set:
+        Hu_centers.append(centers[i])
+      else:
+        Hd_centers.append(centers[i])
+      # end if
+    # end for i
+    from input_xml import InputXml
+    inp = InputXml()
+    # feed data to xml node
+    pos_node = protons.find('.//attrib[@name="position"]')
+    pos_node.text = inp.arr2text( np.array(Hu_centers) )
+    protons.set('name','Hu')
+    protons.set('size',str(nions/2))
+
+    dn_protons = deepcopy(protons)
+    dn_protons.set('name','Hd')
+    dn_protons.find('.//attrib[@name="position"]').text = inp.arr2text( np.array(Hd_centers) )
+    dn_protons.set('size',str(nions/2))
+    ion0.append(dn_protons)
 
     return centers
 
@@ -117,13 +144,13 @@ def edit_quantum_particleset(e_particleset,centers,rs,axes,ion_width):
     eu_centers = []
     ed_centers = []
     for i in range(nions):
-        if i in Hu_idx_set:
-            Hu_centers.append(proton_pos[i])
-            eu_centers.append(electron_pos[i])
-        else:
-            Hd_centers.append(proton_pos[i])
-            ed_centers.append(electron_pos[i])
-        # end if
+      if i in Hu_idx_set:
+        Hu_centers.append(proton_pos[i])
+        eu_centers.append(electron_pos[i])
+      else:
+        Hd_centers.append(proton_pos[i])
+        ed_centers.append(electron_pos[i])
+      # end if
     # end for i
 
     # should be 2 groups in electronic wf, one u, one d
@@ -249,67 +276,70 @@ def edit_determinantset(wf,centers,ion_width,axes):
 
     # construct <basisset>
     pbasis = etree.Element("basisset")
-    pao_basis = etree.Element('atomicBasisSet',attrib={
-        'elementType':'H',     # identifier for aoBuilder
-        'angular':'cartesian', # Use Gamess-style order of angular functions
-        'type':'GTO',          # use Gaussians in NGOBuilder::addRadialOrbital()
-        'normalized':'yes'     # do not mess with my input coefficients
-    })
+    for hname in ['Hu','Hd']:
+      pao_basis = etree.Element('atomicBasisSet',attrib={
+          'elementType':hname,   # center for atomic basis set
+          'angular':'cartesian', # Use Gamess-style order of angular functions
+          'type':'GTO',          # use Gaussians in NGOBuilder::addRadialOrbital()
+          'normalized':'yes'     # do not mess with my input coefficients
+      })
 
-    # build <grid>
-    bgrid = etree.Element('grid',{
-        'npts':'1001',
-        'rf':'100',
-        'ri':'1.e-6',
-        'type':'log'
-    })
+      # build <grid>
+      bgrid = etree.Element('grid',{
+          'npts':'1001',
+          'rf':'100',
+          'ri':'1.e-6',
+          'type':'log'
+      })
 
-    # build <basisGroup>
-    bgroup = etree.Element('basisGroup',{
-        'l':'0',
-        'n':'1',
-        'rid':'R0'
-    })
-    bgroup.append(etree.Element('radfunc',{'contraction':'1.0','exponent':str(ion_width)}))
-    pao_basis.append(bgrid)
-    pao_basis.append(bgroup)
-    pbasis.append(pao_basis)
+      # build <basisGroup>
+      bgroup = etree.Element('basisGroup',{
+          'l':'0',
+          'n':'1',
+          'rid':'R0'
+      })
+      bgroup.append(etree.Element('radfunc',{'contraction':'1.0','exponent':str(ion_width)}))
+      pao_basis.append(bgrid)
+      pao_basis.append(bgroup)
+      pbasis.append(pao_basis)
+    # end for hname
     # finished construct </basisset>
     pbuilder.append(pbasis)
 
     # build <sposet>
 
-    # split into up and down protons
-    Hu_idx_set = Hu_idx(axes,np.array(centers))
-    identity = np.eye(nions)
-    Hup_det  = []
-    Hdown_det= []
-    for i in range(nions):
-        if i in Hu_idx_set:
-            Hup_det.append(identity[i])
-        else:
-            Hdown_det.append(identity[i])
-        # end if
-    # end for i
+    ## !!!! already done at the basis set level
+    ## split into up and down protons
+    #Hu_idx_set = Hu_idx(axes,np.array(centers))
+    #identity = np.eye(nions)
+    #Hup_det  = []
+    #Hdown_det= []
+    #for i in range(nions):
+    #    if i in Hu_idx_set:
+    #      Hup_det.append(identity[i])
+    #    else:
+    #      Hdown_det.append(identity[i])
+    #    # end if
+    ## end for i
 
     pup_sposet = etree.Element('sposet',attrib={
-        'name':'spo_uH',
+        'name':'spo_Hu',
         'id':'proton_orbs_up',
         'size':str(nions/2)
     })
     coeff = etree.Element("coefficient",
             {"id":"HudetC","type":"constArray","size":str(nions/2)})
-    coeff.text = matrix_to_text(Hup_det)
+    coeff.text = matrix_to_text( np.eye(nions)[:nions/2] )
     pup_sposet.append(coeff)
 
     pdn_sposet = etree.Element('sposet',attrib={
-        'name':'spo_dH',
+        'name':'spo_Hd',
         'id':'proton_orbs_down',
         'size':str(nions/2)
     })
     coeff1 = etree.Element("coefficient",
             {"id":"HddetC","type":"constArray","size":str(nions/2)})
-    coeff1.text = matrix_to_text(Hdown_det)
+    coeff1.text = matrix_to_text( np.eye(nions)[nions/2:])
     pdn_sposet.append(coeff1)
     # done construct </sposet>
     pbuilder.append(pup_sposet)
@@ -318,15 +348,15 @@ def edit_determinantset(wf,centers,ion_width,axes):
 
     # build <determinant>
     uHdet = etree.Element('determinant',{
-        'group':'uH',
-        'id':'uHdet',
+        'group':'Hu',
+        'id':'Hudet',
         'size':str(nions/2),
         'sposet':pup_sposet.get('name'),
         'no_bftrans':'yes' # do not transform proton coordinates
     })
     dHdet = etree.Element('determinant',{
-        'group':'dH',
-        'id':'dHdet',
+        'group':'Hd',
+        'id':'Hddet',
         'size':str(nions/2),
         'sposet':pdn_sposet.get('name'),
         'no_bftrans':'yes' # do not transform proton coordinates
@@ -353,7 +383,7 @@ def bo_to_nobo(bo_input_name,nobo_input_name,ion_width=9.0,rs=1.31):
     del inp
 
     ion0 = xml.xpath('//particleset[@name="ion0"]')[0]
-    centers = change_ion0_to_wf_ceneters(ion0)
+    centers = change_ion0_to_wf_ceneters(ion0,axes)
     # !! minimum atom spacing, special to cubic cell
     alat = np.sort(np.unique(np.array(centers).flatten()))[1]
 
