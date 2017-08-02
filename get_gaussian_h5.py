@@ -19,6 +19,19 @@ def naive_cubic_grid(alat,grid_shape,func):
   return orb_grid
 # end def naive_cubic_grid
 
+def fast_cubic_grid(axes,func,grid_shape,dxdydz):
+  from itertools import product
+  grid = np.zeros(grid_shape)
+  xidx = range(grid_shape[0])
+  yidx = range(grid_shape[1])
+  zidx = range(grid_shape[2])
+  for i,j,k in product(xidx,yidx,zidx):
+    rvec = np.array([i,j,k])*dxdydz
+    grid[i,j,k] = func(rvec)
+  # end for
+  return grid
+# end def fast_cubic_grid
+
 def img_gauss(rvec,center,axes,alpha):
   dr = rvec-center # naive displacement
 
