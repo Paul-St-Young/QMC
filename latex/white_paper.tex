@@ -8,6 +8,7 @@
 \newcommand{\midrule}{\hline}
 \newcommand{\bottomrule}{\hline\hline}
 \newcommand{\bs}{\boldsymbol}
+\newcommand{\tr}{\text{tr}}
 
 \usepackage{xcolor,framed}
 \definecolor{shadecolor}{gray}{0.95}
@@ -34,6 +35,13 @@ stringstyle=\color{deepred},
 frame=tb,                         % Any extra options here
 showstringspaces=false            % 
 }
+\lstset{language=C++,
+basicstyle=\ttfamily\scriptsize,
+keywordstyle=\color{blue}\ttfamily,
+stringstyle=\color{red}\ttfamily,
+commentstyle=\color{gray}\ttfamily,
+morecomment=[l][\color{magenta}]{\#},
+}
 \lstdefinestyle{Bash}{
 language=Bash,
 keywordstyle=\color{BlueViolet}\bfseries,
@@ -47,6 +55,15 @@ breaklines=true
 }
 
 \begin{document}
-\section{Title}
+\section{White Paper}
+Yubo ``Paul" Yang \\
+\indent \today
+
+\subsection{Motivation}
+\subsection{Method}
+\subsection{Results}
+
+%\bibliographystyle{unsrt}
+%\bibliography{ref}
 
 \end{document}
