@@ -170,15 +170,16 @@ def edit_jastrows(wf,hname='p'):
 # end def edit_jastrows
 
 def edit_backflows(wf,hname='p'):
+    # move e-I backflow into e-e backflow
 
     bf_node = wf.find('.//backflow')
     if bf_node is None:
-        return # nothing to do
+      return # nothing to do
 
     # 1.  grab eta_ei and remove e-I backflow
     bf1  = wf.find('.//transformation[@type="e-I"]')
     if bf1 is None:
-        return # nothing to do
+      return # nothing to do
     eta1 = bf1.xpath('.//correlation')
     bf_node.remove(bf1)
 
@@ -186,23 +187,28 @@ def edit_backflows(wf,hname='p'):
     bf2  = wf.find('.//transformation[@type="e-e"]')
     term = bf2.find('.//correlation')
 
-    up_term = deepcopy(term)
-    up_term.set('speciesA','u')
-    up_term.set('speciesB',hname)
-
     etypes = {0:"u",1:"d"}
     for eta in eta1:
       ion_name = eta.attrib.pop('elementType')
-      ion_name = 'p' # !!!! override ion name
+      ion_name = hname # !!!! override ion name
       for ie in etypes.keys():
         ename = etypes[ie]
         eta.set('speciesA',ename)
         eta.set('speciesB',ion_name)
-        coeff = eta.find('.//coefficients')
-        coeff.set('id',ename+ion_name+'B')
+        if ename == 'u':
+          coeff = eta.find('.//coefficients')
+          coeff.set('id',ename+ion_name+'B')
+        else:
+          eta.set('link','u'+hname)
+        # end if
         bf2.append(deepcopy(eta))
       # end for ie
     # end for eta
+    # explicitly link dd to uu
+    bf2.append(etree.Element('correlation',{'speciesA':'d','speciesB':'d','link':'uu'}))
+
+    # 3. add a p-p correlation term which does not matter
+    bf2.append(etree.Element('correlation',{'speciesA':hname,'speciesB':hname,'link':'uu'}))
 
 # end def edit_jastrows
 
