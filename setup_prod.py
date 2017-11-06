@@ -309,9 +309,7 @@ def edit_determinantset(wf,centers,ion_width):
 
 #  Main Routine
 # ======================================
-def bo_to_nobo(bo_input_name,ion_width=9.0,rs=1.31):
-  parser = etree.XMLParser(remove_blank_text=True)
-  doc = etree.parse(bo_input_name,parser)
+def bo_to_nobo(doc,ion_width=9.0,rs=1.31):
 
   ion0 = doc.xpath('//particleset[@name="ion0"]')[0]
   centers = change_ion0_to_wf_ceneters(ion0)
@@ -336,6 +334,8 @@ if __name__ == "__main__":
   import sys
   inp_xml = sys.argv[1]
   out_xml = 'nobo-'+inp_xml
-  doc = bo_to_nobo(inp_xml)
+  parser = etree.XMLParser(remove_blank_text=True)
+  doc = etree.parse(inp_xml,parser)
+  bo_to_nobo(doc)
   doc.write(out_xml,pretty_print=True)
 # end __main__
