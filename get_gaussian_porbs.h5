@@ -1,0 +1,109 @@
+#!/usr/bin/env python
+import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+from qharv.seed import xml
+from mpl_toolkits.mplot3d import Axes3D
+from qharv.inspect import crystal, volumetric
+
+if __name__ == '__main__':
+  import argparse
+  parser = argparse.ArgumentParser()
+  parser.add_argument('inp_xml',type=str,help='QMCPACk input xml file to read axes,pos from')
+  parser.add_argument('expo',type=float,help='gaussian exponent in a.u. e.g. 9.0')
+  parser.add_argument('gs0',type=int,help='gs=(gs0,gs0,gs0)')
+  args = parser.parse_args()
+
+  doc  = xml.read(args.inp_xml)
+  expo = args.expo
+  gs   = np.array([args.gs0]*3)
+
+
+  wf_h5_fname = 'exp%3.2f_gs%d.h5' % (expo,gs[0])
+
+  # get structure
+  axes  = crystal.lattice_vectors(args.inp_xml)
+  pos   = crystal.atomic_coords(args.inp_xml,pset_name='wf_centers')
+  natom = len(pos)
+
+  # get Gaussians in the cell
+  import pyscf.gto.basis as bas
+  btext = '''
+H s
+ %3.2f     1.0
+''' % expo
+  basis = {'H':bas.parse(btext)}
+
+  from pyscf.pbc import gto
+  from qharv.cross import pqscf
+  cell = gto.M(a=axes,atom=pqscf.atom_text(['H']*natom,pos),verbose=3,
+    gs = gs,basis=basis,unit='au')
+
+  from pyscf.pbc.dft import gen_grid,numint
+  coords = gen_grid.gen_uniform_grids(cell)
+  """ # draw numerical grid
+  # Q/ Is coords a uniform grid in axes units?
+  #uni = np.linspace(2*gs+1)
+  nx = 2*gs[0]+1
+  from itertools import product
+  cube_pts = np.array([a for a in product( range(nx),repeat=3 )],dtype=float)/nx # !!!! repeat=3 assumes that gs has the same value in all 3 dimensions
+  mypos = np.dot(cube_pts,axes)
+
+  fig = plt.figure()
+  ax  = fig.add_subplot(1,1,1,projection='3d')
+  crystal.draw_atoms(ax,coords,ms=5,alpha=0.2)
+  crystal.draw_atoms(ax,mypos,ms=1,alpha=0.5,c='r')
+  plt.show()
+  # A/ Yes. The spacing is 1/(2*gs+1).
+  assert 0
+  """
+  aoR    = numint.eval_ao(cell,coords)
+  
+  """ # visualize orbitals
+  vgrid = np.array([16,16,16])
+  fig = plt.figure()
+  ax  = fig.add_subplot(1,1,1,projection='3d')
+  alat0 = axes[2][2]
+  crystal.draw_crystal(ax,axes*vgrid/alat0,pos*vgrid/alat0)
+
+  for i in range(36):
+    rho = aoR[:,i].reshape(2*gs+1)
+    fval= volumetric.spline_volumetric(rho)
+    grid= volumetric.axes_func_on_grid3d(axes,fval,vgrid)
+    try:
+      volumetric.isosurf(ax,grid,level_frac=0.8)
+    except:
+      print i
+    # end try
+  # end for i
+  plt.show()
+  """
+
+  #""" # FT orbitals
+  gvecs,psig = pqscf.r_to_pw(aoR[:,0],2*gs+1) # initialized gvecs
+  mo_energy  = np.arange(aoR.shape[1]) # fake mo energy
+  sorted_state_indices = np.argsort(mo_energy)
+  istate = 0
+  data = []
+  for idx in sorted_state_indices:
+    gvecs1,psig = pqscf.r_to_pw(aoR[:,idx],2*gs+1,gvecs=gvecs.astype(int))
+    psig_arr = np.zeros([len(psig),2])
+    psig_arr[:,0] = psig.real
+    psig_arr[:,1] = psig.imag
+    entry = {'istate':istate,'evalue':mo_energy[idx],'evector':psig_arr}
+    data.append(entry)
+    istate += 1
+  # end for idx
+  eig_df = pd.DataFrame(data)
+  eig_df['ikpt']  = 0
+  eig_df['ispin'] = 0
+  eig_df['reduced_k'] = [[0,0,0]]*len(eig_df)
+  eig_df.set_index(['ikpt','ispin','istate'],inplace=True,drop=True)
+
+  from pyscf_orbital_routines import generate_pwscf_h5
+  generate_pwscf_h5(cell,gvecs,eig_df,h5_fname=wf_h5_fname)
+  #"""
+
+# end __main__
