@@ -195,11 +195,12 @@ def edit_backflows(wf,hname='p'):
         ename = etypes[ie]
         eta.set('speciesA',ename)
         eta.set('speciesB',ion_name)
+        coeff = eta.find('.//coefficients')
         if ename == 'u':
-          coeff = eta.find('.//coefficients')
           coeff.set('id',ename+ion_name+'B')
         else:
           eta.set('link','u'+hname)
+          eta.remove(coeff)
         # end if
         bf2.append(deepcopy(eta))
       # end for ie
