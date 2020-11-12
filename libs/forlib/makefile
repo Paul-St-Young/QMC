@@ -1,0 +1,9 @@
+NAME=stats
+export FC=gfortran
+export CC=gcc
+F2PY=f2py
+
+all:
+	$(F2PY) -c -m $(NAME) $(NAME).f90
+clean:
+	rm -rf $(NAME)*.so __pycache__ *.pyc
